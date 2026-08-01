@@ -143,12 +143,30 @@
   .bdot.none { background: var(--ink-2); border-color: var(--line); }
   .bdot.sel { border-color: #fff; transform: scale(1.15); }
   .bteam-totals { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .bteam-chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    border-radius: 100px; padding: 6px 12px; font-size: .85rem; font-weight: 700;
+  .bteam-chip { 
+    display: inline-flex; align-items: center; gap: 7px;
+    border-radius: 100px; padding: 8px 14px; font-size: .95rem; font-weight: 700;
     border: 1px solid var(--line); background: var(--ink-3);
   }
-  .bteam-chip .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .bteam-chip .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+  /* Ergonomie agrandie du tableau */
+  .board h3 { font-size: 1.15rem; }
+  .brow { padding: 13px 14px; margin-bottom: 11px; }
+  .brow .bname { font-size: 1.02rem; }
+  .brow .bscore { font-family: var(--font-display); font-size: 1.45rem; }
+  .bbtns button { padding: 10px 0; font-size: .92rem; }
+  .badd input { padding: 12px 14px; font-size: .95rem; }
+
+  /* Grand écran : tableau permanent en colonne de droite, plus de tiroir */
+  @media (min-width: 1100px) {
+    body { padding-right: 380px; }
+    .board {
+      transform: none; width: 360px; box-shadow: none;
+      transition: none;
+    }
+    .board-toggle, .bclose { display: none; }
+  }
   .breset:hover { border-color: var(--neon); color: var(--txt); }
   .bclose {
     width: 100%; background: none; border: none; color: var(--txt-dim);
@@ -865,7 +883,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-33DRK58ZZS"
 };
 /* =====================================================
-   OREILLE ABSOLUE — v21
+   OREILLE ABSOLUE — v22
    - Deux onglets : 🎧 Blind test / 🎤 N'oubliez pas les paroles
    - Onglet Paroles : grille de catégories dédiée (config présélectionnée)
    - Scoring dégressif, versus, perso, périodes, niveaux, stats
@@ -2934,6 +2952,7 @@ $("bzBuzz").onclick = () => {
 };
 
 renderHome();
+renderBoard();
 </script>
 </body>
 </html>
