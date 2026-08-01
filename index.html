@@ -489,6 +489,7 @@
       <button class="btn-ghost" id="btnBack">← Catégories</button>
     </div>
 
+    <div class="turn-banner" id="bzBar" style="display:none"></div>
     <div class="turn-banner" id="turnBanner" style="display:none"></div>
 
     <div class="loading" id="loading">
@@ -627,7 +628,9 @@
       <div class="bz-code" id="bzCode">····</div>
       <div style="text-align:center;color:var(--txt-dim);font-size:.8rem" id="bzPlayers">0 buzzer connecté</div>
       <div class="bz-status" id="bzStatus">🟢 Armé — lance ta musique !</div>
-      <button class="btn-main" id="bzReset" style="width:100%">🔄 Réarmer pour la manche suivante</button>
+      <button class="btn-main" id="bzReset" style="width:100%;margin-bottom:10px">🔄 Réarmer pour la manche suivante</button>
+      <button class="btn-main" id="bzPlay" style="width:100%;background:var(--cyan);color:#062a25;margin-bottom:10px">🎮 Aller jouer — la salle reste ouverte</button>
+      <button class="btn-skip" id="bzKill">✕ Fermer la salle définitivement</button>
     </div>
 
     <!-- Vue joueur -->
@@ -846,7 +849,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-33DRK58ZZS"
 };
 /* =====================================================
-   OREILLE ABSOLUE — v19
+   OREILLE ABSOLUE — v20
    - Deux onglets : 🎧 Blind test / 🎤 N'oubliez pas les paroles
    - Onglet Paroles : grille de catégories dédiée (config présélectionnée)
    - Scoring dégressif, versus, perso, périodes, niveaux, stats
@@ -2013,6 +2016,7 @@ async function newRound() {
   renderWave();
   $("round").style.display = "block";
   updateTurnBanner();
+  updateBzBar();
   updatePlayHint();
   $("guessInput").focus();
 }
@@ -2069,12 +2073,8 @@ function stopClassicTimer() {
   if (state.cInterval) { clearInterval(state.cInterval); state.cInterval = null; }
 }
 
-function startClassicRound() {
-  if (state.cStart || state.over) return; // déjà lancé
-  state.cStart = Date.now();
-  state.audio.currentTime = 0;
-  state.audio.play().catch(() => {});
-  state.audio.onended = () => { if (!state.over) classicTimeUp(); };
+function startClassicInterval() {
+  if (state.cInterval) clearInterval(state.cInterval);
   state.cInterval = setInterval(() => {
     const el = (Date.now() - state.cStart) / 1000;
     state.cElapsed = el;
@@ -2086,6 +2086,15 @@ function startClassicRound() {
     }
     if (el >= 31 && !state.over) classicTimeUp();
   }, 100);
+}
+
+function startClassicRound() {
+  if (state.cStart || state.over) return; // déjà lancé
+  state.cStart = Date.now();
+  state.audio.currentTime = 0;
+  state.audio.play().catch(() => {});
+  state.audio.onended = () => { if (!state.over) classicTimeUp(); };
+  startClassicInterval();
 }
 
 function classicTimeUp() {
@@ -2452,15 +2461,22 @@ async function startRush() {
   $("artwork").style.display = "";
   $("btnFull").style.display = "";
   $("round").style.display = "block";
+  updateBzBar();
   updatePlayHint();
 
   nextRushTrack();
+  startRushInterval();
+  $("guessInput").focus();
+}
+
+function startRushInterval() {
+  if (!state.rush) return;
+  if (state.rush.interval) clearInterval(state.rush.interval);
   state.rush.interval = setInterval(() => {
     state.rush.timeLeft -= 0.1;
     updateRushTimer();
     if (state.rush.timeLeft <= 0) endRush();
   }, 100);
-  $("guessInput").focus();
 }
 
 function updateRushTimer() {
@@ -2631,6 +2647,14 @@ function openBuzzer() {
   $("home").classList.add("hidden");
   $("bgame").classList.add("active");
   $("bzError").classList.remove("active");
+  if (bzIsHost && bzRoomRef) {
+    // Salle déjà active : on retombe directement dessus
+    $("bzChoice").style.display = "none";
+    $("bzHost").style.display = "block";
+    $("bzJoin").style.display = "none";
+    $("bzSetup").style.display = "none";
+    return;
+  }
   $("bzChoice").style.display = "block";
   $("bzHost").style.display = "none";
   $("bzJoin").style.display = "none";
@@ -2648,45 +2672,120 @@ function bzCleanup() {
 
 $("buzzLink").onclick = openBuzzer;
 $("bzBack").onclick = () => {
-  bzCleanup();
+  if (!(bzIsHost && bzRoomRef)) bzCleanup(); // joueur ou pas de salle : on nettoie
   $("bgame").classList.remove("active");
   $("home").classList.remove("hidden");
+  updateBuzzLink();
 };
 
 // --- Hôte ---
+let bzRoomCode = "", bzPlayersN = 0, bzHitName = null, bzPausedByBuzz = false;
+
+function updateBuzzLink() {
+  $("buzzLink").textContent = (bzIsHost && bzRoomRef)
+    ? "🔔 Salle " + bzRoomCode + " active — " + bzPlayersN + " buzzer" + (bzPlayersN > 1 ? "s" : "") + " · gérer"
+    : "🔔 Buzzer de soirée — salle en ligne pour les équipes";
+}
+
+// Barre de buzz affichée dans l'écran de jeu quand une salle est ouverte
+function updateBzBar() {
+  const bar = $("bzBar");
+  if (!(bzIsHost && bzRoomRef)) { bar.style.display = "none"; return; }
+  bar.style.display = "block";
+  if (bzHitName) {
+    bar.innerHTML = '🔔 <b style="color:var(--neon);font-size:1.15em">' + esc(bzHitName) +
+      '</b> — musique en pause, réponse à l\'oral ! ' +
+      '<button class="btn-main" id="bzBarReset" style="padding:7px 14px;font-size:.82rem;margin-left:10px">🔄 Réarmer & reprendre</button>';
+    const btn = $("bzBarReset");
+    if (btn) btn.onclick = () => { if (bzRoomRef) bzRoomRef.child("buzz").set(null); };
+  } else {
+    bar.innerHTML = '🔔 Salle <b style="color:var(--gold)">' + esc(bzRoomCode) + '</b> · ' +
+      bzPlayersN + ' buzzer' + (bzPlayersN > 1 ? 's' : '') + ' · 🟢 armé';
+  }
+}
+
+// Coupe musique + chronos quand quelqu'un buzze ; reprend au réarmement
+function gamePauseForBuzz() {
+  bzPausedByBuzz = false;
+  if (state.audio && !state.audio.paused) { state.audio.pause(); bzPausedByBuzz = true; }
+  if (state.classicMode && state.cStart && state.cInterval) {
+    clearInterval(state.cInterval); state.cInterval = null; bzPausedByBuzz = true;
+  }
+  if (state.rushMode && state.rush && state.rush.interval) {
+    clearInterval(state.rush.interval); state.rush.interval = null; bzPausedByBuzz = true;
+  }
+}
+function gameResumeAfterBuzz() {
+  if (!bzPausedByBuzz) return;
+  bzPausedByBuzz = false;
+  if (state.over) return;
+  if (state.classicMode && state.cStart) {
+    state.cStart = Date.now() - state.cElapsed * 1000; // reprend le chrono où il était
+    startClassicInterval();
+    if (state.audio) state.audio.play().catch(() => {});
+  } else if (state.rushMode && state.rush) {
+    startRushInterval();
+    if (state.audio) state.audio.play().catch(() => {});
+  } else if (state.audio) {
+    state.audio.play().catch(() => {}); // progressif : reprend l'extrait en cours
+  }
+}
+
 $("bzHostBtn").onclick = async () => {
   $("bzError").classList.remove("active");
   try { await loadFirebase(); }
   catch (e) { bzShowError(e.message === "noconfig" ? "Config Firebase manquante — suis les 5 étapes ci-dessus." : "Impossible de charger Firebase (réseau ?)"); return; }
   bzIsHost = true;
-  const code = Array.from({ length: 4 }, () => "ABCDEFGHJKMNPQRSTUVWXYZ"[Math.floor(Math.random() * 23)]).join("");
-  bzRoomRef = fbDb.ref("rooms/" + code);
+  bzRoomCode = Array.from({ length: 4 }, () => "ABCDEFGHJKMNPQRSTUVWXYZ"[Math.floor(Math.random() * 23)]).join("");
+  bzRoomRef = fbDb.ref("rooms/" + bzRoomCode);
   await bzRoomRef.set({ created: firebase.database.ServerValue.TIMESTAMP, buzz: null });
   bzRoomRef.onDisconnect().remove();
-  $("bzCode").textContent = code.split("").join(" ");
+  $("bzCode").textContent = bzRoomCode.split("").join(" ");
   $("bzChoice").style.display = "none";
   $("bzHost").style.display = "block";
+  updateBuzzLink();
 
   bzBuzzRef = bzRoomRef.child("buzz");
   bzBuzzRef.on("value", snap => {
     const b = snap.val();
     const st = $("bzStatus");
     if (b && b.name) {
+      bzHitName = b.name;
       st.textContent = "🔔 " + b.name + " !";
       st.classList.add("hit");
       bzBeep();
-      if (state.audio) state.audio.pause(); // coupe la musique en cours, tous modes
+      gamePauseForBuzz();
     } else {
+      const wasHit = bzHitName !== null;
+      bzHitName = null;
       st.textContent = "🟢 Armé — lance ta musique !";
       st.classList.remove("hit");
+      if (wasHit) gameResumeAfterBuzz();
     }
+    updateBzBar();
   });
   bzRoomRef.child("players").on("value", snap => {
-    const n = snap.numChildren();
-    $("bzPlayers").textContent = n + " buzzer" + (n > 1 ? "s" : "") + " connecté" + (n > 1 ? "s" : "");
+    bzPlayersN = snap.numChildren();
+    $("bzPlayers").textContent = bzPlayersN + " buzzer" + (bzPlayersN > 1 ? "s" : "") + " connecté" + (bzPlayersN > 1 ? "s" : "");
+    updateBuzzLink();
+    updateBzBar();
   });
 };
 $("bzReset").onclick = () => { if (bzRoomRef) bzRoomRef.child("buzz").set(null); };
+$("bzPlay").onclick = () => {
+  // La salle reste ouverte : retour à l'accueil pour choisir un mode
+  $("bgame").classList.remove("active");
+  $("home").classList.remove("hidden");
+  updateBuzzLink();
+};
+$("bzKill").onclick = () => {
+  bzCleanup();
+  bzRoomCode = ""; bzPlayersN = 0; bzHitName = null; bzPausedByBuzz = false;
+  updateBuzzLink();
+  updateBzBar();
+  $("bzHost").style.display = "none";
+  $("bzChoice").style.display = "block";
+};
 
 // --- Joueur ---
 $("bzJoinBtn").onclick = () => {
