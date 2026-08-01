@@ -134,6 +134,21 @@
     padding: 9px; color: var(--txt-dim); cursor: pointer; font-family: var(--font-body);
     font-size: .82rem; margin-top: 6px;
   }
+  .bdots { display: flex; gap: 5px; margin-top: 8px; align-items: center; }
+  .bdots .lbl { font-size: .68rem; color: var(--txt-dim); margin-right: 3px; }
+  .bdot {
+    width: 17px; height: 17px; border-radius: 50%; cursor: pointer;
+    border: 2px solid transparent; padding: 0;
+  }
+  .bdot.none { background: var(--ink-2); border-color: var(--line); }
+  .bdot.sel { border-color: #fff; transform: scale(1.15); }
+  .bteam-totals { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .bteam-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: 100px; padding: 6px 12px; font-size: .85rem; font-weight: 700;
+    border: 1px solid var(--line); background: var(--ink-3);
+  }
+  .bteam-chip .dot { width: 11px; height: 11px; border-radius: 50%; }
   .breset:hover { border-color: var(--neon); color: var(--txt); }
   .bclose {
     width: 100%; background: none; border: none; color: var(--txt-dim);
@@ -684,6 +699,7 @@
     <input type="text" id="boardInput" placeholder="Nom d'équipe / joueur…" autocomplete="off">
     <button id="boardAdd">+</button>
   </div>
+  <div class="bteam-totals" id="boardTeamTotals"></div>
   <div id="boardRows"></div>
   <button class="breset" id="boardReset">Remettre tous les scores à zéro</button>
   <button class="bclose" id="boardClose">Fermer</button>
@@ -849,7 +865,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-33DRK58ZZS"
 };
 /* =====================================================
-   OREILLE ABSOLUE — v20
+   OREILLE ABSOLUE — v21
    - Deux onglets : 🎧 Blind test / 🎤 N'oubliez pas les paroles
    - Onglet Paroles : grille de catégories dédiée (config présélectionnée)
    - Scoring dégressif, versus, perso, périodes, niveaux, stats
@@ -2217,6 +2233,14 @@ function endRound(won) {
     updateTurnBanner();
   }
 
+  // Buzzer : bonne réponse validée par l'arbitre avec un buzz actif
+  // → crédit automatique du buzzeur au tableau + réarmement de la salle
+  if (won && bzHitName && bzIsHost && bzRoomRef) {
+    boardCredit(bzHitName, pts);
+    bzFlashCredit(bzHitName, pts);
+    bzRoomRef.child("buzz").set(null);
+  }
+
   $("score").textContent = (Math.round(state.score * 10) / 10).toString();
   $("streak").textContent = state.streak;
   $("found").textContent = state.found;
@@ -2508,6 +2532,11 @@ function rushEvaluate(gTitle, label) {
     r.combo++;
     r.maxCombo = Math.max(r.maxCombo, r.combo);
     addAttempt("✅ " + state.track.trackName + " — " + state.track.artistName, true);
+    if (bzHitName && bzIsHost && bzRoomRef) {
+      boardCredit(bzHitName, 1);
+      bzFlashCredit(bzHitName, 1);
+      bzRoomRef.child("buzz").set(null);
+    }
     updateRushTimer();
     nextRushTrack();
   } else {
@@ -2540,23 +2569,59 @@ function endRush() {
   $("cTimer").textContent = "⏱ 0.0s";
 }
 
-// ---------- Tableau de score latéral (indépendant du jeu) ----------
-const boardTeams = []; // { name, score } — en mémoire, remis à zéro au rechargement
+// ---------- Tableau de score latéral ----------
+// Lignes individuelles + couleurs d'équipe : score perso ET score d'équipe agrégé.
+// Alimenté automatiquement par le buzzer (bonne réponse validée = points au buzzeur),
+// et toujours pilotable à la main par l'arbitre.
+const boardTeams = []; // { name, score, color } — en mémoire, remis à zéro au rechargement
+
+const BOARD_COLORS = {
+  none:   { label: "Sans équipe", hex: null },
+  orange: { label: "Orange",  hex: "#FF9F43" },
+  vert:   { label: "Vert",    hex: "#4ADE80" },
+  cyan:   { label: "Cyan",    hex: "#29D9C2" },
+  rose:   { label: "Rose",    hex: "#FF3D7F" },
+  violet: { label: "Violet",  hex: "#A78BFA" },
+  jaune:  { label: "Jaune",   hex: "#FFC24B" }
+};
+
+function renderBoardTeamTotals() {
+  const box = $("boardTeamTotals");
+  const totals = {};
+  boardTeams.forEach(t => {
+    if (t.color && t.color !== "none") totals[t.color] = (totals[t.color] || 0) + t.score;
+  });
+  const keys = Object.keys(totals);
+  if (!keys.length) { box.innerHTML = ""; return; }
+  const best = Math.max(...keys.map(k => totals[k]));
+  box.innerHTML = keys
+    .sort((a, b) => totals[b] - totals[a])
+    .map(k => {
+      const c = BOARD_COLORS[k];
+      return `<span class="bteam-chip" style="border-color:${c.hex}">
+        <span class="dot" style="background:${c.hex}"></span>
+        ${totals[k] === best && best > 0 ? "👑 " : ""}Équipe ${c.label} · <span style="color:${c.hex}">${Math.round(totals[k] * 10) / 10}</span>
+      </span>`;
+    }).join("");
+}
 
 function renderBoard() {
+  renderBoardTeamTotals();
   const box = $("boardRows");
   box.innerHTML = "";
   if (!boardTeams.length) {
-    box.innerHTML = '<div style="color:var(--txt-dim);font-size:.82rem;text-align:center;padding:12px 0">Ajoute des équipes ou des joueurs pour commencer à compter.</div>';
+    box.innerHTML = '<div style="color:var(--txt-dim);font-size:.82rem;text-align:center;padding:12px 0">Ajoute des joueurs — ou laisse le buzzer les créer tout seul à la première bonne réponse.</div>';
     return;
   }
   const top = Math.max(...boardTeams.map(t => t.score));
   boardTeams.forEach((t, i) => {
+    const cHex = (BOARD_COLORS[t.color] || BOARD_COLORS.none).hex;
     const row = document.createElement("div");
     row.className = "brow" + (t.score === top && t.score > 0 ? " lead" : "");
+    if (cHex) row.style.borderLeft = "4px solid " + cHex;
     row.innerHTML = `
       <div class="btop">
-        <span class="bname">${t.score === top && t.score > 0 ? "👑 " : ""}${esc(t.name)}</span>
+        <span class="bname" style="${cHex ? "color:" + cHex : ""}">${t.score === top && t.score > 0 ? "👑 " : ""}${esc(t.name)}</span>
         <span class="bscore">${Math.round(t.score * 10) / 10}</span>
         <button class="bdel" title="Supprimer">✕</button>
       </div>
@@ -2566,10 +2631,20 @@ function renderBoard() {
         <button data-d="0.5">+0.5</button>
         <button data-d="1">+1</button>
         <button data-d="2">+2</button>
-      </div>`;
+      </div>
+      <div class="bdots"><span class="lbl">Équipe :</span></div>`;
     row.querySelector(".bdel").onclick = () => { boardTeams.splice(i, 1); renderBoard(); };
     row.querySelectorAll("[data-d]").forEach(b => {
       b.onclick = () => { t.score = Math.round((t.score + parseFloat(b.dataset.d)) * 10) / 10; renderBoard(); };
+    });
+    const dots = row.querySelector(".bdots");
+    Object.entries(BOARD_COLORS).forEach(([key, c]) => {
+      const dot = document.createElement("button");
+      dot.className = "bdot" + (key === "none" ? " none" : "") + ((t.color || "none") === key ? " sel" : "");
+      if (c.hex) dot.style.background = c.hex;
+      dot.title = c.label;
+      dot.onclick = () => { t.color = key; renderBoard(); };
+      dots.appendChild(dot);
     });
     box.appendChild(row);
   });
@@ -2577,13 +2652,34 @@ function renderBoard() {
 
 function addBoardTeam() {
   const name = $("boardInput").value.trim();
-  if (!name || boardTeams.length >= 12) return;
+  if (!name || boardTeams.length >= 20) return;
   if (!boardTeams.some(t => normalize(t.name) === normalize(name))) {
-    boardTeams.push({ name, score: 0 });
+    boardTeams.push({ name, score: 0, color: "none" });
   }
   $("boardInput").value = "";
   renderBoard();
   $("boardInput").focus();
+}
+
+// Crédit automatique : appelé quand une bonne réponse est validée avec un buzz actif
+function boardCredit(name, pts) {
+  let row = boardTeams.find(t => normalize(t.name) === normalize(name));
+  if (!row) {
+    if (boardTeams.length >= 20) return;
+    row = { name, score: 0, color: "none" };
+    boardTeams.push(row);
+  }
+  row.score = Math.round((row.score + pts) * 10) / 10;
+  renderBoard();
+}
+
+// Confirmation visuelle dans la barre de buzz, puis retour à l'état armé
+function bzFlashCredit(name, pts) {
+  const bar = $("bzBar");
+  if (bar.style.display === "none") return;
+  bar.innerHTML = '✅ <b style="color:var(--cyan)">+' + pts + ' pt' + (pts > 1 ? 's' : '') +
+    '</b> pour <b>' + esc(name) + '</b> — tableau mis à jour 🏆';
+  setTimeout(updateBzBar, 2600);
 }
 
 $("boardToggle").onclick = () => { $("board").classList.add("open"); renderBoard(); };
