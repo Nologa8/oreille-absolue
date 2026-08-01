@@ -1,0 +1,2744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oreille Absolue — Blind test par catégories</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0D0F16;
+    --ink-2: #161927;
+    --ink-3: #1F2335;
+    --line: #2C3149;
+    --txt: #EDEFF7;
+    --txt-dim: #8A90AC;
+    --neon: #FF3D7F;
+    --cyan: #29D9C2;
+    --gold: #FFC24B;
+    --lvl-f: #4ADE80;   /* facile */
+    --lvl-i: #FFC24B;   /* intermédiaire */
+    --lvl-x: #FF3D7F;   /* expert */
+    --radius: 14px;
+    --font-display: 'Unbounded', system-ui, sans-serif;
+    --font-body: 'Space Grotesk', system-ui, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ink); color: var(--txt); font-family: var(--font-body);
+    background-image:
+      radial-gradient(ellipse 60% 40% at 50% -10%, rgba(255,61,127,.14), transparent),
+      radial-gradient(ellipse 50% 35% at 80% 110%, rgba(41,217,194,.08), transparent);
+    background-attachment: fixed; min-height: 100vh;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 18px 60px; }
+
+  header { text-align: center; margin-bottom: 8px; }
+  .logo {
+    font-family: var(--font-display); font-weight: 900;
+    font-size: clamp(1.5rem, 6vw, 2.2rem); letter-spacing: .02em; line-height: 1.05;
+    cursor: pointer; user-select: none;
+  }
+  .logo .accent { color: var(--neon); }
+  .tagline { color: var(--txt-dim); font-size: .85rem; margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
+  .scorebar {
+    display: flex; justify-content: center; align-items: center; gap: 18px;
+    margin: 18px 0 26px; font-size: .9rem; color: var(--txt-dim); flex-wrap: wrap;
+  }
+  .scorebar b { color: var(--txt); font-size: 1.05rem; }
+  .scorebar .streak b { color: var(--gold); }
+  .btn-stats {
+    background: var(--ink-3); border: 1px solid var(--line); color: var(--txt);
+    border-radius: 100px; padding: 6px 14px; cursor: pointer;
+    font-family: var(--font-body); font-size: .85rem;
+  }
+  .btn-stats:hover { border-color: var(--cyan); }
+
+  /* ---------- Onglets ---------- */
+  .tabs {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: 100px; padding: 5px;
+  }
+  .tab {
+    flex: 1; background: none; border: none; border-radius: 100px;
+    padding: 11px 10px; color: var(--txt-dim); cursor: pointer;
+    font-family: var(--font-body); font-weight: 700; font-size: .9rem;
+    transition: background .15s, color .15s;
+  }
+  .tab.active { background: var(--ink-3); color: var(--txt); border: 1px solid var(--line); }
+  .tab.active.bt { color: var(--cyan); }
+  .tab.active.ct { color: var(--gold); }
+  .tab.active.kt { color: var(--neon); }
+  .cat-card.classic { border-color: rgba(255,194,75,.4); }
+  .cat-card.classic:hover { border-color: var(--gold); }
+  .ctimer {
+    font-family: var(--font-display); font-weight: 700; font-size: 1.5rem;
+    color: var(--gold); text-align: center; margin: 6px 0 2px; min-height: 1.6em;
+  }
+
+  /* ---------- Tableau de score latéral ---------- */
+  .board-toggle {
+    position: fixed; right: 0; top: 45%; z-index: 90;
+    background: var(--ink-2); border: 1px solid var(--line); border-right: none;
+    border-radius: 12px 0 0 12px; padding: 12px 9px;
+    color: var(--gold); cursor: pointer; font-size: 1.1rem;
+    writing-mode: vertical-rl; font-family: var(--font-body); font-weight: 700;
+    letter-spacing: .08em;
+  }
+  .board-toggle:hover { border-color: var(--gold); }
+  .board {
+    position: fixed; top: 0; right: 0; height: 100vh; width: min(320px, 88vw);
+    background: var(--ink-2); border-left: 1px solid var(--line);
+    z-index: 95; padding: 22px 18px; overflow-y: auto;
+    transform: translateX(105%); transition: transform .22s ease;
+    box-shadow: -14px 0 40px rgba(0,0,0,.5);
+  }
+  .board.open { transform: translateX(0); }
+  .board h3 { font-family: var(--font-display); font-size: 1rem; margin-bottom: 4px; }
+  .board .bsub { color: var(--txt-dim); font-size: .78rem; margin-bottom: 14px; }
+  .badd { display: flex; gap: 8px; margin-bottom: 14px; }
+  .badd input {
+    flex: 1; min-width: 0; background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; color: var(--txt);
+    font-family: var(--font-body); font-size: .9rem;
+  }
+  .badd input:focus { outline: none; border-color: var(--gold); }
+  .badd button {
+    background: var(--gold); border: none; border-radius: 10px; padding: 0 14px;
+    font-weight: 700; cursor: pointer; color: #1a1405; font-family: var(--font-body);
+  }
+  .brow {
+    background: var(--ink-3); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; margin-bottom: 9px;
+  }
+  .brow.lead { border-color: rgba(255,194,75,.6); }
+  .brow .btop { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .brow .bname { flex: 1; font-weight: 700; font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .brow .bscore { color: var(--gold); font-weight: 700; font-family: var(--font-display); font-size: 1.05rem; }
+  .brow .bdel { background: none; border: none; color: var(--txt-dim); cursor: pointer; font-size: .9rem; }
+  .brow .bdel:hover { color: var(--neon); }
+  .bbtns { display: flex; gap: 6px; }
+  .bbtns button {
+    flex: 1; background: var(--ink-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 0; color: var(--txt); cursor: pointer; font-family: var(--font-body);
+    font-size: .82rem; font-weight: 700;
+  }
+  .bbtns button:hover { border-color: var(--gold); }
+  .bbtns button.minus:hover { border-color: var(--neon); }
+  .breset {
+    width: 100%; background: none; border: 1px dashed var(--line); border-radius: 10px;
+    padding: 9px; color: var(--txt-dim); cursor: pointer; font-family: var(--font-body);
+    font-size: .82rem; margin-top: 6px;
+  }
+  .breset:hover { border-color: var(--neon); color: var(--txt); }
+  .bclose {
+    width: 100%; background: none; border: none; color: var(--txt-dim);
+    text-decoration: underline; cursor: pointer; font-family: var(--font-body);
+    font-size: .85rem; margin-top: 10px;
+  }
+
+  /* ---------- Buzzer de soirée ---------- */
+  .buzz-link {
+    display: block; margin: -8px auto 18px; background: none;
+    border: 1px dashed var(--line); border-radius: 100px; padding: 9px 18px;
+    color: var(--txt-dim); cursor: pointer; font-family: var(--font-body); font-size: .85rem;
+  }
+  .buzz-link:hover { border-color: var(--gold); color: var(--txt); }
+  .bz-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .bz-code {
+    font-family: var(--font-display); font-weight: 900; font-size: 2.6rem;
+    text-align: center; letter-spacing: .3em; color: var(--gold); margin: 18px 0 4px;
+  }
+  .bz-status {
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--radius);
+    min-height: 160px; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 24px 18px; margin: 18px 0;
+    font-family: var(--font-display); font-weight: 700; font-size: 1.3rem;
+  }
+  .bz-status.hit { border-color: var(--neon); background: rgba(255,61,127,.1); color: var(--neon); font-size: 1.8rem; }
+  .bz-btn {
+    width: 100%; aspect-ratio: 1; max-width: 300px; margin: 20px auto; display: block;
+    border-radius: 50%; border: 6px solid var(--neon);
+    background: radial-gradient(circle at 35% 30%, #ff6ba0, var(--neon) 70%);
+    color: #fff; font-family: var(--font-display); font-weight: 900; font-size: 1.8rem;
+    cursor: pointer; box-shadow: 0 14px 40px rgba(255,61,127,.4);
+    transition: transform .08s;
+  }
+  .bz-btn:active { transform: scale(.95); }
+  .bz-btn:disabled {
+    background: var(--ink-3); border-color: var(--line); color: var(--txt-dim);
+    box-shadow: none; cursor: default;
+  }
+  .bz-setup {
+    background: rgba(255,194,75,.07); border: 1px solid rgba(255,194,75,.4);
+    border-radius: var(--radius); padding: 16px; font-size: .86rem; line-height: 1.7;
+  }
+  .bz-setup ol { margin: 8px 0 0 18px; }
+  .bz-setup code { background: var(--ink-3); padding: 1px 6px; border-radius: 5px; font-size: .8rem; }
+
+  /* ---------- Catégories ---------- */
+  .cat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .cat-card {
+    background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 14px;
+    cursor: pointer; text-align: left;
+    transition: transform .12s ease, border-color .12s ease;
+    color: var(--txt); font-family: var(--font-body);
+  }
+  .cat-card:hover, .cat-card:focus-visible { transform: translateY(-2px); border-color: var(--neon); outline: none; }
+  .cat-card .emoji { font-size: 1.5rem; display: block; margin-bottom: 6px; }
+  .cat-card .name { font-weight: 700; font-size: .98rem; }
+  .cat-card .count { color: var(--txt-dim); font-size: .76rem; margin-top: 3px; }
+
+  /* ---------- Modales (niveau + stats) ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(7,8,14,.8);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 18px;
+  }
+  .overlay.active { display: flex; }
+  .modal {
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 18px;
+    padding: 26px 22px; width: 100%; max-width: 440px;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .modal h2 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .modal .sub { color: var(--txt-dim); font-size: .85rem; margin-bottom: 18px; }
+  .lvl-btn {
+    width: 100%; text-align: left; background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px;
+    cursor: pointer; color: var(--txt); font-family: var(--font-body);
+    transition: border-color .12s;
+  }
+  .lvl-btn .lname { font-weight: 700; font-size: .95rem; }
+  .lvl-btn .ldesc { color: var(--txt-dim); font-size: .8rem; margin-top: 3px; }
+  .lvl-btn.f:hover { border-color: var(--lvl-f); }
+  .lvl-btn.i:hover { border-color: var(--lvl-i); }
+  .lvl-btn.x:hover { border-color: var(--lvl-x); }
+  .lvl-btn.f .lname { color: var(--lvl-f); }
+  .lvl-btn.i .lname { color: var(--lvl-i); }
+  .lvl-btn.x .lname { color: var(--lvl-x); }
+  .period-label {
+    color: var(--txt-dim); font-size: .74rem; text-transform: uppercase;
+    letter-spacing: .06em; margin: 4px 0 8px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip {
+    background: var(--ink-3); border: 1px solid var(--line); border-radius: 100px;
+    padding: 7px 13px; font-size: .8rem; color: var(--txt-dim);
+    cursor: pointer; font-family: var(--font-body); transition: border-color .1s;
+  }
+  .chip:hover { border-color: var(--txt-dim); }
+  .chip.sel { border-color: var(--cyan); color: var(--txt); background: rgba(41,217,194,.12); }
+  .achip {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,61,127,.1); border: 1px solid rgba(255,61,127,.5);
+    border-radius: 100px; padding: 6px 8px 6px 13px; font-size: .8rem; color: var(--txt);
+    font-family: var(--font-body);
+  }
+  .achip button {
+    background: none; border: none; color: var(--neon); cursor: pointer;
+    font-size: .95rem; line-height: 1; padding: 0 3px; font-family: var(--font-body);
+  }
+  .cat-card.custom { border-color: rgba(255,194,75,.55); }
+  .cat-card.custom:hover { border-color: var(--gold); }
+  .cat-card.versus { border-color: rgba(41,217,194,.55); }
+  .cat-card.versus:hover { border-color: var(--cyan); }
+
+  /* ---------- Mode Versus ---------- */
+  .turn-banner {
+    background: linear-gradient(90deg, rgba(41,217,194,.14), rgba(255,61,127,.14));
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 16px; margin-bottom: 18px; text-align: center;
+    font-size: .95rem;
+  }
+  .turn-banner b { color: var(--cyan); font-size: 1.05rem; }
+  .turn-banner .round-info { color: var(--txt-dim); font-size: .78rem; margin-top: 3px; }
+  .vs-select {
+    width: 100%; background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 12px 14px; color: var(--txt);
+    font-family: var(--font-body); font-size: .92rem; margin-bottom: 16px;
+    appearance: none; cursor: pointer;
+  }
+  .vs-select:focus { outline: none; border-color: var(--cyan); }
+  .lead-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .lead-row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px 16px;
+  }
+  .lead-row.winner { border-color: var(--gold); background: rgba(255,194,75,.08); }
+  .lead-row .rank { font-family: var(--font-display); font-weight: 700; font-size: 1rem; width: 34px; color: var(--txt-dim); }
+  .lead-row.winner .rank { color: var(--gold); }
+  .lead-row .pname { flex: 1; font-weight: 700; }
+  .lead-row .pscore { color: var(--cyan); font-weight: 700; font-size: 1.05rem; }
+
+  /* ---------- Mode Paroles ---------- */
+  .cat-card.karaoke { border-color: rgba(255,61,127,.4); }
+  .cat-card.karaoke:hover { border-color: var(--neon); }
+  .ksong {
+    text-align: center; margin-bottom: 18px;
+  }
+  .ksong .kt { font-weight: 700; font-size: 1.05rem; }
+  .ksong .ka { color: var(--txt-dim); font-size: .88rem; }
+  .lyrics-box {
+    background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px 18px; margin-bottom: 16px;
+    text-align: center; line-height: 1.9; font-size: 1.02rem;
+  }
+  .lyrics-box .ctx { color: var(--txt-dim); }
+  .lyrics-box .target { color: var(--gold); font-weight: 700; letter-spacing: .04em; }
+  .lyrics-box .target .blank {
+    display: inline-block; border-bottom: 2px solid var(--gold);
+    min-width: 34px; margin: 0 3px;
+  }
+  .kdiff { line-height: 2; font-size: 1.02rem; }
+  .kdiff .ok { color: var(--cyan); font-weight: 700; }
+  .kdiff .ko { color: var(--neon); font-weight: 700; text-decoration: line-through; }
+  .kdiff .missed { color: var(--gold); font-weight: 700; }
+  .kplay-inline {
+    background: none; border: 1px solid var(--cyan); color: var(--cyan);
+    border-radius: 100px; padding: 8px 16px; cursor: pointer;
+    font-family: var(--font-body); font-size: .85rem; margin-bottom: 16px;
+  }
+  .kplay-inline:hover { background: rgba(41,217,194,.1); }
+  .modal-close {
+    width: 100%; background: none; border: none; color: var(--txt-dim);
+    font-family: var(--font-body); font-size: .85rem; cursor: pointer;
+    text-decoration: underline; margin-top: 4px;
+  }
+  .modal-close:hover { color: var(--txt); }
+
+  .stats-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .stats-table th, .stats-table td { padding: 8px 6px; text-align: right; border-bottom: 1px solid rgba(44,49,73,.5); }
+  .stats-table th { color: var(--txt-dim); font-weight: 500; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+  .stats-table td:first-child, .stats-table th:first-child { text-align: left; }
+  .stats-table .pts { color: var(--cyan); font-weight: 700; }
+  .stats-global { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat-box {
+    background: var(--ink-3); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 8px; text-align: center;
+  }
+  .stat-box b { display: block; font-size: 1.2rem; color: var(--txt); }
+  .stat-box span { font-size: .7rem; color: var(--txt-dim); text-transform: uppercase; letter-spacing: .04em; }
+  .stats-note { color: var(--txt-dim); font-size: .75rem; margin-top: 14px; text-align: center; }
+
+  /* ---------- Jeu ---------- */
+  .game { display: none; }
+  .game.active { display: block; }
+  .home.hidden { display: none; }
+  .game-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 8px; flex-wrap: wrap; }
+  .cat-pill {
+    background: var(--ink-3); border: 1px solid var(--line);
+    padding: 6px 14px; border-radius: 100px; font-size: .85rem; font-weight: 500;
+  }
+  .cat-pill .lvl { font-weight: 700; }
+  .cat-pill .lvl.f { color: var(--lvl-f); } .cat-pill .lvl.i { color: var(--lvl-i); } .cat-pill .lvl.x { color: var(--lvl-x); }
+  .btn-ghost {
+    background: none; border: none; color: var(--txt-dim); cursor: pointer;
+    font-family: var(--font-body); font-size: .85rem; text-decoration: underline;
+  }
+  .btn-ghost:hover { color: var(--txt); }
+
+  .wave { display: flex; gap: 5px; align-items: flex-end; justify-content: center; height: 72px; margin: 30px 0 6px; }
+  .wave .seg {
+    flex: 1; max-width: 70px; background: var(--ink-3); border: 1px solid var(--line);
+    border-radius: 6px; position: relative; transition: background .25s, border-color .25s;
+  }
+  .wave .seg::before {
+    content: "+" attr(data-pts);
+    position: absolute; top: -19px; left: 50%; transform: translateX(-50%);
+    font-size: .68rem; color: var(--gold); font-weight: 700; white-space: nowrap;
+  }
+  .wave .seg::after {
+    content: attr(data-dur); position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+    font-size: .68rem; color: var(--txt-dim); white-space: nowrap;
+  }
+  .wave .seg.unlocked { background: rgba(41,217,194,.22); border-color: var(--cyan); }
+  .wave .seg.burned { background: rgba(255,61,127,.16); border-color: rgba(255,61,127,.55); }
+  .wave .seg:nth-child(1){height:22%} .wave .seg:nth-child(2){height:38%} .wave .seg:nth-child(3){height:55%}
+  .wave .seg:nth-child(4){height:70%} .wave .seg:nth-child(5){height:86%} .wave .seg:nth-child(6){height:100%}
+
+  .play-zone { text-align: center; margin: 40px 0 26px; }
+  .btn-play {
+    width: 84px; height: 84px; border-radius: 50%;
+    border: 2px solid var(--cyan); background: rgba(41,217,194,.1);
+    color: var(--cyan); font-size: 1.9rem; cursor: pointer;
+    transition: transform .1s, background .15s;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-play:hover { background: rgba(41,217,194,.2); transform: scale(1.05); }
+  .play-hint { color: var(--txt-dim); font-size: .82rem; margin-top: 12px; }
+  .hint-artist { text-align: center; color: var(--gold); font-size: .9rem; margin-bottom: 14px; min-height: 1.2em; font-weight: 500; }
+
+  .search-wrap { position: relative; }
+  .guess-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .guess-input {
+    flex: 1; width: 100%; background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px 16px;
+    color: var(--txt); font-family: var(--font-body); font-size: 1rem;
+  }
+  .guess-input:focus { outline: none; border-color: var(--cyan); }
+  .guess-input::placeholder { color: var(--txt-dim); }
+  .suggestions {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--ink-2); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden; z-index: 50;
+    max-height: 300px; overflow-y: auto; display: none;
+    box-shadow: 0 12px 32px rgba(0,0,0,.5);
+  }
+  .suggestions.active { display: block; }
+  .sug { padding: 11px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; border-bottom: 1px solid rgba(44,49,73,.5); }
+  .sug:last-child { border-bottom: none; }
+  .sug:hover, .sug.hl { background: var(--ink-3); }
+  .sug .t { font-weight: 500; font-size: .93rem; }
+  .sug .a { color: var(--txt-dim); font-size: .8rem; }
+  .sug-loading { padding: 11px 14px; color: var(--txt-dim); font-size: .85rem; }
+
+  .btn-main {
+    background: var(--neon); color: #fff; border: none;
+    border-radius: var(--radius); padding: 14px 20px;
+    font-family: var(--font-body); font-weight: 700; font-size: .95rem;
+    cursor: pointer; transition: filter .12s; white-space: nowrap;
+  }
+  .btn-main:hover { filter: brightness(1.12); }
+  .btn-skip {
+    width: 100%; background: none; border: 1px dashed var(--line);
+    border-radius: var(--radius); padding: 11px; color: var(--txt-dim);
+    font-family: var(--font-body); font-size: .88rem; cursor: pointer;
+  }
+  .btn-skip:hover { border-color: var(--txt-dim); color: var(--txt); }
+
+  .attempts { margin-top: 20px; display: flex; flex-direction: column; gap: 7px; }
+  .attempt {
+    background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 14px; font-size: .88rem; color: var(--txt-dim);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .attempt .x { color: var(--neon); font-weight: 700; }
+  .attempt.half { border-color: rgba(255,194,75,.5); }
+  .attempt.half .x { color: var(--gold); }
+
+  .reveal { display: none; text-align: center; margin-top: 10px; }
+  .reveal.active { display: block; }
+  .reveal .verdict { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; margin-bottom: 18px; }
+  .reveal .verdict.win { color: var(--cyan); }
+  .reveal .verdict.half { color: var(--gold); }
+  .reveal .verdict.lose { color: var(--neon); }
+  .reveal img { width: 190px; height: 190px; border-radius: var(--radius); border: 1px solid var(--line); margin-bottom: 14px; }
+  .reveal .title { font-weight: 700; font-size: 1.15rem; }
+  .reveal .artist { color: var(--txt-dim); margin-bottom: 20px; }
+  .reveal .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+  .loading { text-align: center; color: var(--txt-dim); padding: 50px 0; display: none; }
+  .loading.active { display: block; }
+  .loading .disc { font-size: 2.4rem; display: inline-block; animation: spin 1.4s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .loading .disc { animation: none; }
+    .cat-card, .btn-play { transition: none; }
+  }
+  .error-box {
+    display: none; background: rgba(255,61,127,.08); border: 1px solid rgba(255,61,127,.4);
+    border-radius: var(--radius); padding: 16px; margin-top: 20px;
+    font-size: .88rem; color: var(--txt); text-align: center;
+  }
+  .error-box.active { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" id="logo">OREILLE<span class="accent">/</span>ABSOLUE</div>
+    <div class="tagline">Devine le son. Le moins de secondes possible.</div>
+  </header>
+
+  <div class="scorebar">
+    <div>Points <b id="score">0</b></div>
+    <div class="streak">Série <b id="streak">0</b> 🔥</div>
+    <div>Trouvés <b id="found">0</b>/<b id="played">0</b></div>
+    <button class="btn-stats" id="btnStats">📊 Stats</button>
+  </div>
+
+  <!-- =============== ACCUEIL =============== -->
+  <div class="home" id="home">
+    <div class="tabs">
+      <button class="tab bt active" id="tabBlind">🎧 Progressif</button>
+      <button class="tab ct" id="tabClassic">🎵 Classique</button>
+      <button class="tab kt" id="tabKaraoke">🎤 Paroles</button>
+    </div>
+    <div id="panelBlind">
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
+    <div id="panelClassic" style="display:none">
+      <div class="cat-grid" id="cCatGrid"></div>
+    </div>
+    <div id="panelKaraoke" style="display:none">
+      <div class="cat-grid" id="kCatGrid"></div>
+    </div>
+    <button class="buzz-link" id="buzzLink">🔔 Buzzer de soirée — salle en ligne pour les équipes</button>
+  </div>
+
+  <!-- =============== JEU =============== -->
+  <div class="game" id="game">
+    <div class="game-top">
+      <div class="cat-pill" id="catPill"></div>
+      <button class="btn-ghost" id="btnBack">← Catégories</button>
+    </div>
+
+    <div class="turn-banner" id="turnBanner" style="display:none"></div>
+
+    <div class="loading" id="loading">
+      <span class="disc">💿</span>
+      <div style="margin-top:10px">Je fouille les bacs…</div>
+    </div>
+
+    <div id="round" style="display:none">
+      <div class="ctimer" id="cTimer" style="display:none"></div>
+      <div class="wave" id="wave"></div>
+      <div class="play-zone">
+        <button class="btn-play" id="btnPlay" aria-label="Écouter l'extrait">▶</button>
+        <div class="play-hint" id="playHint"></div>
+        <button class="btn-ghost" id="btnBt" style="margin-top:8px">🔊 Mode enceinte : OFF</button>
+      </div>
+      <div class="hint-artist" id="hintArtist"></div>
+
+      <div id="guessZone">
+        <div class="guess-row">
+          <div class="search-wrap" style="flex:1">
+            <input class="guess-input" id="guessInput" type="text"
+                   placeholder="Cherche un titre ou un artiste…" autocomplete="off">
+            <div class="suggestions" id="suggestions"></div>
+          </div>
+          <button class="btn-main" id="btnGuess">Valider</button>
+        </div>
+        <button class="btn-skip" id="btnSkip">Passer (débloque plus d'audio)</button>
+        <div class="attempts" id="attempts"></div>
+      </div>
+
+      <div class="reveal" id="reveal">
+        <div class="verdict" id="verdict"></div>
+        <img id="artwork" alt="Pochette de l'album">
+        <div class="title" id="revealTitle"></div>
+        <div class="artist" id="revealArtist"></div>
+        <div class="actions">
+          <button class="btn-skip" style="width:auto" id="btnFull">▶ Écouter l'extrait 30s</button>
+          <button class="btn-main" id="btnNext">Morceau suivant →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox">
+      Impossible de charger un morceau. Causes possibles : ta période est trop
+      restrictive pour cette catégorie (K-Pop avant 1980, sérieux ?) — reviens en
+      arrière et élargis-la. Ou bien tu es dans un aperçu sandboxé (artifact) et
+      l'API iTunes est bloquée : déploie sur Vercel ou ouvre le fichier en local.
+      <div style="margin-top:12px"><button class="btn-main" id="btnRetry">Réessayer</button></div>
+    </div>
+  </div>
+
+  <!-- =============== MICRO D'OR (paroles) =============== -->
+  <div class="game" id="kgame">
+    <div class="game-top">
+      <div class="cat-pill" id="kPill">🎤 Paroles</div>
+      <button class="btn-ghost" id="kBack">← Catégories</button>
+    </div>
+
+    <div class="loading" id="kLoading">
+      <span class="disc">🎤</span>
+      <div style="margin-top:10px">Je cherche un morceau avec des paroles…</div>
+    </div>
+
+    <div id="kRound" style="display:none">
+      <div class="ksong">
+        <div class="kt" id="kTitle"></div>
+        <div class="ka" id="kArtist"></div>
+      </div>
+      <div style="text-align:center">
+        <button class="kplay-inline" id="kPlay">▶ Écouter un extrait (ambiance, pas synchro)</button>
+      </div>
+      <div class="lyrics-box" id="kLyrics"></div>
+
+      <div id="kGuessZone">
+        <div class="guess-row">
+          <input class="guess-input" id="kInput" type="text" placeholder="Complète la ligne manquante…" autocomplete="off" style="flex:1">
+          <button class="btn-main" id="kSubmit">Valider</button>
+        </div>
+        <button class="btn-skip" id="kSkip">Je sèche, montre-moi</button>
+      </div>
+
+      <div class="reveal" id="kReveal">
+        <div class="verdict" id="kVerdict"></div>
+        <div class="lyrics-box kdiff" id="kDiff"></div>
+        <div class="actions">
+          <button class="btn-main" id="kNext">Ligne suivante →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="kError">
+      Pas trouvé de paroles pour cette combinaison (les paroles viennent de LRCLIB,
+      la couverture varie selon les artistes). Réessaie ou change de catégorie/niveau.
+      <div style="margin-top:12px"><button class="btn-main" id="kRetry">Réessayer</button></div>
+    </div>
+  </div>
+
+  <!-- =============== BUZZER DE SOIRÉE =============== -->
+  <div class="game" id="bgame">
+    <div class="game-top">
+      <div class="cat-pill">🔔 Buzzer</div>
+      <button class="btn-ghost" id="bzBack">← Retour</button>
+    </div>
+
+    <!-- Config Firebase manquante -->
+    <div id="bzSetup" class="bz-setup" style="display:none">
+      <b>⚙️ Une seule config à faire (5 min, une fois pour toutes) :</b>
+      <ol>
+        <li>Va sur <b>console.firebase.google.com</b> → "Ajouter un projet" (nom libre, Analytics inutile)</li>
+        <li>Menu <b>Realtime Database</b> → "Créer une base" → mode <b>test</b></li>
+        <li>Paramètres du projet ⚙️ → "Vos applications" → icône <b>&lt;/&gt;</b> (Web) → enregistre l'app</li>
+        <li>Copie l'objet <code>firebaseConfig</code> affiché</li>
+        <li>Ouvre ce fichier HTML, cherche <code>FIREBASE_CONFIG</code> tout en haut du script, remplace <code>null</code> par ton objet, sauvegarde, redéploie</li>
+      </ol>
+    </div>
+
+    <!-- Choix hôte / joueur -->
+    <div id="bzChoice">
+      <div class="bz-choice">
+        <button class="cat-card" id="bzHostBtn">
+          <span class="emoji">📺</span>
+          <div class="name">Créer une salle</div>
+          <div class="count">Je suis l'hôte (écran + enceinte)</div>
+        </button>
+        <button class="cat-card" id="bzJoinBtn">
+          <span class="emoji">🔔</span>
+          <div class="name">Rejoindre</div>
+          <div class="count">Mon téléphone devient un buzzer</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vue hôte -->
+    <div id="bzHost" style="display:none">
+      <div style="text-align:center;color:var(--txt-dim);font-size:.85rem">Code de la salle — les équipes le rentrent sur leur téléphone :</div>
+      <div class="bz-code" id="bzCode">····</div>
+      <div style="text-align:center;color:var(--txt-dim);font-size:.8rem" id="bzPlayers">0 buzzer connecté</div>
+      <div class="bz-status" id="bzStatus">🟢 Armé — lance ta musique !</div>
+      <button class="btn-main" id="bzReset" style="width:100%">🔄 Réarmer pour la manche suivante</button>
+    </div>
+
+    <!-- Vue joueur -->
+    <div id="bzJoin" style="display:none">
+      <div class="guess-row" style="margin-top:8px">
+        <input class="guess-input" id="bzCodeInput" type="text" placeholder="Code (4 lettres)" maxlength="4" style="flex:1;text-transform:uppercase">
+        <input class="guess-input" id="bzNameInput" type="text" placeholder="Nom d'équipe" style="flex:2">
+      </div>
+      <button class="btn-main" id="bzEnter" style="width:100%">Entrer dans la salle</button>
+      <div id="bzPlayerZone" style="display:none">
+        <button class="bz-btn" id="bzBuzz">BUZZ</button>
+        <div style="text-align:center;color:var(--txt-dim);font-size:.85rem" id="bzPlayerStatus">Prêt·e — écoute l'enceinte…</div>
+      </div>
+    </div>
+
+    <div class="error-box" id="bzError"></div>
+  </div>
+</div>
+
+<!-- =============== MODAL CONFIG PAROLES =============== -->
+<div class="overlay" id="kOverlay">
+  <div class="modal">
+    <h2>🎤 N'oubliez pas les paroles</h2>
+    <div class="sub">On te montre les paroles, la ligne suivante est à toi</div>
+    <div class="period-label">Catégorie</div>
+    <select class="vs-select" id="kCatSelect"></select>
+    <div class="period-label">Période</div>
+    <div class="chips" id="kPeriodChips"></div>
+    <div class="period-label">Niveau</div>
+    <button class="lvl-btn f k-lvl" data-lvl="f">
+      <div class="lname">🟢 Facile</div>
+      <div class="ldesc">Les gros hits — les paroles que tout le monde connaît</div>
+    </button>
+    <button class="lvl-btn i k-lvl" data-lvl="i">
+      <div class="lname">🟠 Intermédiaire</div>
+      <div class="ldesc">Catalogue élargi</div>
+    </button>
+    <button class="lvl-btn x k-lvl" data-lvl="x">
+      <div class="lname">🔴 Expert</div>
+      <div class="ldesc">Deep cuts — bon courage pour les couplets</div>
+    </button>
+    <button class="modal-close" id="kClose">Annuler</button>
+  </div>
+</div>
+<!-- =============== TABLEAU DE SCORE LATÉRAL =============== -->
+<button class="board-toggle" id="boardToggle">🏆 SCORES</button>
+<div class="board" id="board">
+  <h3>🏆 Tableau des équipes</h3>
+  <div class="bsub">Score manuel, indépendant du jeu — parfait pour les soirées</div>
+  <div class="badd">
+    <input type="text" id="boardInput" placeholder="Nom d'équipe / joueur…" autocomplete="off">
+    <button id="boardAdd">+</button>
+  </div>
+  <div id="boardRows"></div>
+  <button class="breset" id="boardReset">Remettre tous les scores à zéro</button>
+  <button class="bclose" id="boardClose">Fermer</button>
+</div>
+
+<!-- =============== MODAL RUSH =============== -->
+<div class="overlay" id="rushOverlay">
+  <div class="modal">
+    <h2>⚡ Rush 60 secondes</h2>
+    <div class="sub">Que des gros hits. Trouve un max de sons en 1 minute — passe ceux que tu connais pas.</div>
+    <div class="period-label">Catégorie</div>
+    <select class="vs-select" id="rushCatSelect"></select>
+    <div class="period-label">Période</div>
+    <div class="chips" id="rushPeriodChips"></div>
+    <button class="btn-main" id="rushStart" style="width:100%;margin-top:6px">⚡ Lancer le rush</button>
+    <button class="modal-close" id="rushClose">Annuler</button>
+  </div>
+</div>
+
+<div class="overlay" id="lvlOverlay">
+  <div class="modal">
+    <h2 id="lvlCatName">Catégorie</h2>
+    <div class="sub">Choisis ta période et ton niveau</div>
+    <div class="period-label">Période</div>
+    <div class="chips" id="periodChips"></div>
+    <div class="period-label">Niveau</div>
+    <button class="lvl-btn f" data-lvl="f">
+      <div class="lname">🟢 Facile</div>
+      <div class="ldesc">Les stars, leurs plus gros hits</div>
+    </button>
+    <button class="lvl-btn i" data-lvl="i">
+      <div class="lname">🟠 Intermédiaire</div>
+      <div class="ldesc">Artistes confirmés, titres moins évidents</div>
+    </button>
+    <button class="lvl-btn x" data-lvl="x">
+      <div class="lname">🔴 Expert</div>
+      <div class="ldesc">Deep cuts et artistes de niche. Bonne chance.</div>
+    </button>
+    <button class="modal-close" id="lvlClose">Annuler</button>
+  </div>
+</div>
+
+<!-- =============== MODAL STATS =============== -->
+<div class="overlay" id="statsOverlay">
+  <div class="modal">
+    <h2>📊 Statistiques</h2>
+    <div class="sub">Ta session en chiffres</div>
+    <div class="stats-global">
+      <div class="stat-box"><b id="stTotal">0</b><span>Manches</span></div>
+      <div class="stat-box"><b id="stAcc">—</b><span>Réussite</span></div>
+      <div class="stat-box"><b id="stBest">0</b><span>Best série</span></div>
+    </div>
+    <table class="stats-table" id="statsTable"></table>
+    <div class="stats-note">Stats de session — remises à zéro si tu recharges la page.</div>
+    <button class="modal-close" id="statsClose">Fermer</button>
+  </div>
+</div>
+
+<!-- =============== MODAL BLIND TEST PERSO =============== -->
+<div class="overlay" id="customOverlay">
+  <div class="modal">
+    <h2>⭐ Blind test perso</h2>
+    <div class="sub">Ajoute tes artistes (jusqu'à 30), puis choisis période et niveau</div>
+    <div class="search-wrap" style="margin-bottom:12px">
+      <input class="guess-input" id="customInput" type="text" placeholder="Cherche un artiste…" autocomplete="off">
+      <div class="suggestions" id="customSugs"></div>
+    </div>
+    <div class="chips" id="customChips"></div>
+    <div class="period-label">Période</div>
+    <div class="chips" id="customPeriodChips"></div>
+    <div class="period-label">Niveau</div>
+    <button class="lvl-btn f custom-lvl" data-lvl="f">
+      <div class="lname">🟢 Facile</div>
+      <div class="ldesc">Les plus gros hits de tes artistes</div>
+    </button>
+    <button class="lvl-btn i custom-lvl" data-lvl="i">
+      <div class="lname">🟠 Intermédiaire</div>
+      <div class="ldesc">Catalogue élargi</div>
+    </button>
+    <button class="lvl-btn x custom-lvl" data-lvl="x">
+      <div class="lname">🔴 Expert</div>
+      <div class="ldesc">Tout le catalogue, deep cuts inclus</div>
+    </button>
+    <div id="customWarn" style="display:none;color:var(--neon);font-size:.82rem;text-align:center;margin-top:6px">
+      Ajoute au moins un artiste avant de lancer !
+    </div>
+    <button class="modal-close" id="customClose">Annuler</button>
+  </div>
+</div>
+
+<!-- =============== MODAL VERSUS =============== -->
+<div class="overlay" id="vsOverlay">
+  <div class="modal">
+    <h2>⚔️ Mode Versus</h2>
+    <div class="sub">1v1 ou équipe vs équipe, sur le même appareil, chacun son tour</div>
+    <div class="period-label">Type de duel</div>
+    <div class="chips" id="vsModeChips"></div>
+    <div class="search-wrap" style="margin-bottom:12px">
+      <div style="display:flex;gap:8px">
+        <input class="guess-input" id="vsNameInput" type="text" placeholder="Nom du joueur…" autocomplete="off" style="flex:1">
+        <button class="btn-main" id="vsAddName" style="padding:12px 16px">+</button>
+      </div>
+    </div>
+    <div class="chips" id="vsChips"></div>
+    <div class="period-label">Manches par participant</div>
+    <div class="chips" id="vsRoundChips"></div>
+    <div class="period-label">Catégorie</div>
+    <select class="vs-select" id="vsCatSelect"></select>
+    <div class="period-label">Période</div>
+    <div class="chips" id="vsPeriodChips"></div>
+    <div class="period-label">Niveau</div>
+    <button class="lvl-btn f vs-lvl" data-lvl="f">
+      <div class="lname">🟢 Facile</div>
+      <div class="ldesc">Les stars, leurs plus gros hits</div>
+    </button>
+    <button class="lvl-btn i vs-lvl" data-lvl="i">
+      <div class="lname">🟠 Intermédiaire</div>
+      <div class="ldesc">Artistes confirmés, titres moins évidents</div>
+    </button>
+    <button class="lvl-btn x vs-lvl" data-lvl="x">
+      <div class="lname">🔴 Expert</div>
+      <div class="ldesc">Deep cuts et artistes de niche</div>
+    </button>
+    <div id="vsWarn" style="display:none;color:var(--neon);font-size:.82rem;text-align:center;margin-top:6px">
+      Ajoute au moins 2 participants pour lancer un versus !
+    </div>
+    <button class="modal-close" id="vsClose">Annuler</button>
+  </div>
+</div>
+
+<!-- =============== MODAL CLASSEMENT =============== -->
+<div class="overlay" id="leadOverlay">
+  <div class="modal">
+    <h2>🏆 Classement final</h2>
+    <div class="sub" id="leadSub">Fin du versus !</div>
+    <div class="lead-list" id="leadList"></div>
+    <button class="btn-main" id="leadReplay" style="width:100%;margin-bottom:10px">Revanche (mêmes réglages)</button>
+    <button class="modal-close" id="leadHome">Retour à l'accueil</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   CONFIG FIREBASE (pour le buzzer de soirée uniquement)
+   → Remplace null par l'objet firebaseConfig copié depuis
+     console.firebase.google.com (voir instructions dans
+     l'écran Buzzer). Tout le reste du jeu marche sans.
+   Exemple :
+   const FIREBASE_CONFIG = {
+     apiKey: "AIza...", authDomain: "xxx.firebaseapp.com",
+     databaseURL: "https://xxx-default-rtdb.europe-west1.firebasedatabase.app",
+     projectId: "xxx", appId: "1:123:web:abc"
+   };
+   ===================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAGAWPsIkNeI4QoJYPCRuBpHLyyBN8lk5U",
+  authDomain: "oreilleabsolue-bb374.firebaseapp.com",
+  databaseURL: "https://oreilleabsolue-bb374-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "oreilleabsolue-bb374",
+  storageBucket: "oreilleabsolue-bb374.firebasestorage.app",
+  messagingSenderId: "156020181343",
+  appId: "1:156020181343:web:cb23f89284601c5ea24eea",
+  measurementId: "G-33DRK58ZZS"
+};
+/* =====================================================
+   OREILLE ABSOLUE — v19
+   - Deux onglets : 🎧 Blind test / 🎤 N'oubliez pas les paroles
+   - Onglet Paroles : grille de catégories dédiée (config présélectionnée)
+   - Scoring dégressif, versus, perso, périodes, niveaux, stats
+   - La Fouine : x0.2. Jul : toujours banni.
+   ===================================================== */
+
+// ---------- Catégories : tiers f (facile) / i (inter) / x (expert) ----------
+const CATEGORIES = {
+  rapfr: { name: "Rap FR", emoji: "🇫🇷", tiers: {
+    f: ["Ninho","SCH","PNL","Damso","Nekfeu","Orelsan","Booba","Gazo","Niska","Soolking",
+        "Sexion d'Assaut","Bigflo & Oli","Kaaris","La Fouine","Rohff","Lomepal","Vald","Tiakola","SDM","GIMS","Gradur","Alonzo","L'Algérino","Sofiane","Lefa","Black M","Youssoupha","Kery James","Médine","Disiz","Rim'K"],
+    i: ["Naps","Laylow","Josman","Zola","Werenoi","Alpha Wann","Dinos","Freeze Corleone","Hamza",
+        "Franglish","Koba LaD","PLK","Maes","RK","Leto","Fresh","Gambi","Heuss L'Enfoiré","Lacrim",
+        "Timal","Sadek","IAM","Suprême NTM","MC Solaar","Dosseh","Kalash Criminel","Sneazzy","S.Pri Noir","DA Uzi","Landy","Kofs","Soso Maness","Akhenaton","ISK","Djadja & Dinaz","Hornet La Frappe","Guizmo","Jok'Air","113","Sniper","Sefyu","Mac Tyer","Seth Gueko","Nessbeal","Gringe"],
+    x: ["La Fève","Luv Resval","Zkr","Favé","Yamê","Khali","So La Lune","Winnterzuko","Bekar",
+        "Kerchak","Rsko","Guy2Bezbar","Luther","Jolagreen23","Ashe 22","Deen Burbigo",
+        "Caballero & JeanJass","Isha","Lujipeka","Georgio","Kekra","Népal","Doums","Zamdane",
+        "Houdi","Tif","Rounhaa","Prince Waly","Thahomey","Bu$hi","Ziak","8ruki","Lesram","Mairo","Zikxo","Jewel Usain","Limsa d'Aulnay","Alkpote","Lunatic","Ärsenik","Fonky Family","La Rumeur","Hugo TSR","Casey","Sameer Ahmad","Infinit'"]
+  }},
+  rapus: { name: "Rap US", emoji: "🦅", tiers: {
+    f: ["Drake","Kendrick Lamar","Travis Scott","Kanye West","Eminem","Post Malone","Nicki Minaj",
+        "Cardi B","50 Cent","Snoop Dogg","2Pac","The Notorious B.I.G.","Doja Cat","Future",
+        "21 Savage","Lil Wayne","Jay-Z","Dr. Dre","Ice Cube","Lil Nas X","Macklemore","Wiz Khalifa","Tyga","Flo Rida","Ludacris","T.I.","OutKast","Nelly","Busta Rhymes","Ja Rule","Fat Joe","Sean Paul","LL Cool J"],
+    i: ["J. Cole","Playboi Carti","Lil Baby","Metro Boomin","A$AP Rocky","Tyler The Creator",
+        "Lil Uzi Vert","Megan Thee Stallion","Juice WRLD","XXXTENTACION","Pop Smoke","DaBaby",
+        "Roddy Ricch","Gunna","Young Thug","Migos","Jack Harlow","Mac Miller","Nas","DMX",
+        "Central Cee","Rick Ross","Missy Elliott","Big Sean","Chance the Rapper","Kodak Black","Swae Lee","Rae Sremmurd","Chief Keef","Fetty Wap","Desiigner","The Game","Mobb Deep","Method Man","Redman","Bone Thugs-N-Harmony","Gucci Mane","2 Chainz","Waka Flocka Flame"],
+    x: ["ScHoolboy Q","Denzel Curry","JID","Baby Keem","Don Toliver","Lil Durk","Polo G",
+        "Wu-Tang Clan","Ice Spice","Logic","NLE Choppa","Ken Carson","Yeat","Lil Yachty",
+        "A$AP Ferg","Freddie Gibbs","Pusha T","Earl Sweatshirt","MF DOOM","Run The Jewels",
+        "Joey Bada$$","Ski Mask The Slump God","Trippie Redd","GloRilla","BigXthaPlug","Larry June","Curren$y","Action Bronson","Vince Staples","Smino","EARTHGANG","Cordae","Aesop Rock","Atmosphere","Tech N9ne","Russ","Benny The Butcher","Westside Gunn","Conway the Machine","Dave East"]
+  }},
+  pop: { name: "Pop", emoji: "✨", tiers: {
+    f: ["The Weeknd","Dua Lipa","Ariana Grande","Ed Sheeran","Billie Eilish","Taylor Swift",
+        "Bruno Mars","Harry Styles","Miley Cyrus","Justin Bieber","Rihanna","Katy Perry","Adele",
+        "Coldplay","Lady Gaga","Maroon 5","Imagine Dragons","Shakira","Britney Spears",
+        "Justin Timberlake","One Direction","Sia","Meghan Trainor","Jason Derulo","Demi Lovato","Jonas Brothers","Backstreet Boys","*NSYNC","Spice Girls","Avril Lavigne","Shania Twain","Jennifer Lopez","Gwen Stefani","Black Eyed Peas","Robbie Williams"],
+    i: ["Charlie Puth","Olivia Rodrigo","Sabrina Carpenter","Shawn Mendes","Sam Smith",
+        "Lana Del Rey","Halsey","Selena Gomez","Camila Cabello","P!nk","Kesha","Christina Aguilera",
+        "ZAYN","Lewis Capaldi","OneRepublic","Ellie Goulding","Ava Max","Bebe Rexha","Anne-Marie",
+        "Tate McRae","Benson Boone","Teddy Swims","Hozier","Jessie J","Clean Bandit","Jess Glynne","Ella Henderson","Birdy","Nelly Furtado","Natasha Bedingfield","Anastacia","Dido","James Blunt","Leona Lewis","Pixie Lott","MIKA"],
+    x: ["Troye Sivan","Gracie Abrams","Conan Gray","Rita Ora","James Arthur","Niall Horan",
+        "Dermot Kennedy","Tom Odell","RAYE","PinkPantheress","Chappell Roan","Reneé Rapp",
+        "AURORA","MARINA","Carly Rae Jepsen","Charli XCX","Kim Petras","Dove Cameron",
+        "Sigrid","Zara Larsson","Mabel","Jorja Smith","Alec Benjamin","Loreen","Mimi Webb",
+        "Calum Scott","Freya Ridings","Em Beihold","Sasha Alex Sloan","Lauv","Maisie Peters","Griff","Holly Humberstone","Lauren Spencer Smith","d4vd","Artemas","Cian Ducrot","Aqua","Eiffel 65","Lou Bega","O-Zone","Las Ketchup","Crazy Frog","t.A.T.u.","Vengaboys","Cascada","Basshunter"]
+  }},
+  rock: { name: "Rock", emoji: "🎸", tiers: {
+    f: ["Queen","AC/DC","Nirvana","Linkin Park","Green Day","Muse","The Rolling Stones",
+        "The Beatles","Led Zeppelin","Guns N' Roses","Red Hot Chili Peppers","Foo Fighters",
+        "Arctic Monkeys","Oasis","U2","Pink Floyd","Aerosmith","The Police","KISS","Nickelback","Limp Bizkit"],
+    i: ["Radiohead","The Killers","Blur","Pearl Jam","The White Stripes","System Of A Down",
+        "Paramore","blink-182","The Doors","Jimi Hendrix","Deep Purple","Black Sabbath","The Who",
+        "Dire Straits","Fleetwood Mac","Eagles","Creedence Clearwater Revival","The Strokes",
+        "Kings of Leon","My Chemical Romance","Fall Out Boy","Panic! At The Disco","Weezer",
+        "The Offspring","Sum 41","Rage Against The Machine","Twenty One Pilots","R.E.M.","Lenny Kravitz","Bush","Live","Third Eye Blind","Goo Goo Dolls","Måneskin"],
+    x: ["Royal Blood","Soundgarden","Alice In Chains","Placebo","Franz Ferdinand","Interpol",
+        "Queens of the Stone Age","Stone Temple Pilots","The Smashing Pumpkins","Incubus",
+        "The Hives","Wolfmother","The Black Keys","Nothing But Thieves","Highly Suspect",
+        "IDLES","Biffy Clyro","Pixies","Sonic Youth","Jane's Addiction","Primus","Ghost",
+        "Thin Lizzy","Supertramp","Status Quo","The Cranberries","Garbage","Skunk Anansie",
+        "Editors","The Kooks","Kaiser Chiefs","Jet","Wolf Alice","Motörhead","Fontaines D.C.","Viagra Boys","The Struts","Greta Van Fleet","Rival Sons","Dirty Honey"]
+  }},
+  metal: { name: "Metal / Core", emoji: "🤘", tiers: {
+    f: ["Metallica","Slipknot","Rammstein","Iron Maiden","Korn","Avenged Sevenfold",
+        "Five Finger Death Punch","Disturbed","Bring Me The Horizon","Gojira","Megadeth",
+        "Pantera","Judas Priest","Slayer","Nightwish","Scorpions","Black Sabbath","Ozzy Osbourne","Sabaton","Powerwolf"],
+    i: ["Architects","Bad Omens","Motionless In White","Sleep Token","Spiritbox","Parkway Drive",
+        "While She Sleeps","A Day To Remember","Beartooth","Killswitch Engage","Trivium",
+        "Asking Alexandria","Of Mice & Men","Papa Roach","Deftones","Breaking Benjamin",
+        "Three Days Grace","In Flames","Jinjer","Electric Callboy","Falling In Reverse",
+        "Lamb Of God","Machine Head","Ice Nine Kills","Bullet For My Valentine","I Prevail","Underoath","Atreyu","The Ghost Inside","Stick To Your Guns"],
+    x: ["Landmvrks","Polaris","Currents","Bury Tomorrow","Wage War","Lorna Shore",
+        "Slaughter To Prevail","Knocked Loose","We Came As Romans","The Amity Affliction",
+        "Northlane","Thornhill","Invent Animate","ERRA","August Burns Red","As I Lay Dying",
+        "Whitechapel","Fit For A King","The Devil Wears Prada","Memphis May Fire","Novelists",
+        "Alpha Wolf","Make Them Suffer","Ten56.","Resolve","Void Of Vision","Crystal Lake",
+        "Dying Wish","Paleface Swiss","Kublai Khan TX","Counterparts","Boundaries","Brand of Sacrifice","Shadow of Intent","Chelsea Grin","Emmure","Attila","Gideon","Varials","Distant"]
+  }},
+  electro: { name: "Électro", emoji: "🎛️", tiers: {
+    f: ["Daft Punk","David Guetta","Calvin Harris","Avicii","Martin Garrix","DJ Snake",
+        "Marshmello","The Chainsmokers","Alan Walker","Tiësto","Kygo","Swedish House Mafia",
+        "Major Lazer","Zedd","Steve Aoki","Bob Sinclar","The Weeknd","Robin Schulz","Lost Frequencies","Alok","Topic","Regard","Joel Corry","MEDUZA"],
+    i: ["Fred again..","Skrillex","Kavinsky","Justice","deadmau5","Petit Biscuit","Gesaffelstein",
+        "Armin van Buuren","Hardwell","Flume","ODESZA","Porter Robinson","Madeon","M83",
+        "Ofenbach","Purple Disco Machine","Polo & Pan","Paul Kalkbrenner","Jean-Michel Jarre","Eric Prydz","Alesso","Afrojack","Don Diablo","Oliver Heldens","Jonas Blue","Sigala"],
+    x: ["Vitalic","Boris Brejcha","Charlotte de Witte","Amelie Lens","Worakls","N'to","Breakbot",
+        "SebastiAn","Mr. Oizo","Myd","Folamour","Bicep","Jamie xx","Four Tet","Bonobo","Caribou",
+        "Moderat","CamelPhat","Adam Beyer","Joachim Pastor","Kungs","Salut c'est cool",
+        "The Blaze","Rone","FKJ","Møme","Tchami","Cassius","Étienne de Crécy","DJ Mehdi","Chase & Status","Sub Focus","Netsky","Dimension","Overmono","I Hate Models","Âme","Tale Of Us","ARTBAT"]
+  }},
+  varfr: { name: "Variété FR", emoji: "🥖", tiers: {
+    f: ["Johnny Hallyday","Jean-Jacques Goldman","Francis Cabrel","Michel Sardou","Céline Dion",
+        "Stromae","Angèle","Indochine","Mylène Farmer","Téléphone","Daniel Balavoine","Édith Piaf",
+        "Charles Aznavour","Jacques Brel","Serge Gainsbourg","Claude François","Dalida","Renaud",
+        "Michel Berger","France Gall","Soprano","Louane","Kendji Girac","Vianney","Slimane",
+        "Joe Dassin","Julien Clerc","Michel Fugain","Patricia Kaas","Jean-Louis Aubert","Garou","Lara Fabian","Hélène Ségara","Grégoire","Christophe Willem","Jenifer","Nolwenn Leroy","Shy'm","Tal","Magic System","Kyo","Marc Lavoine","Lorie"],
+    i: ["Julien Doré","Christophe Maé","Clara Luciani","Zaz","Alain Souchon","Laurent Voulzy",
+        "Michel Polnareff","Patrick Bruel","Florent Pagny","Pascal Obispo","Calogero","Zazie",
+        "Vanessa Paradis","Alizée","M. Pokora","Amir","Claudio Capéo","Grand Corps Malade",
+        "Tryo","-M-","Louise Attaque","Noir Désir","Juliette Armanet","Jeanne Mas",
+        "François Feldman","Elsa Lunghini","Lio","Gilbert Montagné","Pierre Bachelet",
+        "Michel Jonasz","Bernard Lavilliers","Alain Chamfort","Jean-Luc Lahaye","Philippe Lavil","Bénabar","Cali","Raphaël","Emmanuel Moire","Camélia Jordana","Cœur de Pirate","Olivia Ruiz","K.Maro","Tragédie","Willy Denzey","Matt Houston","Superbus","BB Brunes","Axelle Red","Larusso","Leslie","Yelle"],
+    x: ["Hoshi","Pomme","Eddy de Pretto","Ben Mazué","Gaëtan Roussel","Feu! Chatterton",
+        "Fishbach","Voyou","Videoclub","Thérapie TAXI","Suzane","Yseult","Barbara Pravi",
+        "Pierre de Maere","Adé","Santa","Zaho de Sagazan","Vendredi sur Mer","La Femme",
+        "L'Impératrice","Aliocha Schneider","Malik Djoudi","Alain Bashung","Véronique Sanson",
+        "William Sheller","Barbara","Christophe","Partenaire Particulier","Jakie Quartz",
+        "Caroline Loeb","Cookie Dingler","Émile et Images","Benjamin Biolay","Vincent Delerm","Dominique A","Miossec","Clou","Terrenoire","Silly Boy Blue","Camille","Émilie Simon","Philippe Katerine","Arthur H","La Grande Sophie"]
+  }},
+  annees80: { name: "Années 80", emoji: "📼", tiers: {
+    f: ["Michael Jackson","Madonna","Prince","a-ha","Depeche Mode","Cyndi Lauper","Toto",
+        "Eurythmics","Bon Jovi","Whitney Houston","Phil Collins","George Michael","Wham!",
+        "Tina Turner","Lionel Richie","Bonnie Tyler","Survivor","Europe","Van Halen","Simply Red","UB40","Genesis","Elton John","Rod Stewart","Cher","Bryan Adams","Huey Lewis & The News","Olivia Newton-John","Kim Carnes","Chris de Burgh"],
+    i: ["Tears For Fears","Duran Duran","Billy Idol","Blondie","Journey","Rick Astley",
+        "Culture Club","Simple Minds","Kool & The Gang","ZZ Top","New Order","The Cure","INXS",
+        "Men At Work","Soft Cell","Frankie Goes To Hollywood","Talking Heads","Pet Shop Boys",
+        "Foreigner","Hall & Oates","Thompson Twins","Go West","Wang Chung","Johnny Hates Jazz","Belinda Carlisle","The Bangles","Cutting Crew","Mr. Mister","Paul Young","Nik Kershaw","Howard Jones","Midnight Oil","Crowded House","Fine Young Cannibals","Terence Trent D'Arby","Rick James"],
+    x: ["Spandau Ballet","Bananarama","Kim Wilde","Sandra","Desireless","Gold","Niagara",
+        "Les Rita Mitsouko","Étienne Daho","Images","Début de Soirée","Alphaville","Visage",
+        "Ultravox","Orchestral Manoeuvres In The Dark","Erasure","Bronski Beat","Level 42",
+        "Whitesnake","Cock Robin","Sabrina","Boney M.","Peter Schilling","Falco","Nena",
+        "Modern Talking","Samantha Fox","Laura Branigan","Irene Cara","Kenny Loggins",
+        "Ray Parker Jr.","Murray Head","Baltimora","Ryan Paris","F.R. David","Plastic Bertrand",
+        "Rick Springfield","Opus","Righeira","Kajagoogoo","Toto Cutugno","Taco","Matthew Wilder","Animotion","Berlin","Dead or Alive","Icehouse","Blue System","Fancy","C.C. Catch","Secret Service","Bibie","Jean-Pierre Mader","Corynne Charby","Julie Piétri","Stéphanie de Monaco","Philippe Cataldo"]
+  }},
+  rnb: { name: "R&B / Soul", emoji: "💜", tiers: {
+    f: ["The Weeknd","Beyoncé","Usher","Chris Brown","Alicia Keys","SZA","John Legend","Akon",
+        "T-Pain","Ne-Yo","Stevie Wonder","Marvin Gaye","Lauryn Hill","Destiny's Child","TLC",
+        "Boyz II Men","Craig David","Toni Braxton","Sade","Mariah Carey","Janet Jackson","Ciara","Mario","Omarion"],
+    i: ["Frank Ocean","Mary J. Blige","Aaliyah","Erykah Badu","Bryson Tiller","PARTYNEXTDOOR",
+        "Jhené Aiko","Kehlani","Miguel","Anderson .Paak","Steve Lacy","Trey Songz","Jeremih",
+        "D'Angelo","En Vogue","Brandy","Ashanti","Monica","Keyshia Cole","Ty Dolla $ign","Tinashe","Jacquees","Queen Naija","Chlöe","Normani","Muni Long"],
+    x: ["Brent Faiyaz","Summer Walker","Daniel Caesar","Giveon","H.E.R.","Ella Mai","Tems",
+        "Victoria Monét","Ari Lennox","Lucky Daye","Snoh Aalegra","Kali Uchis","Jorja Smith",
+        "Mahalia","Cleo Sol","Maxwell","Musiq Soulchild","Anthony Hamilton","dvsn","6LACK","Ravyn Lenae","Sabrina Claudio","Alina Baraz","Majid Jordan","Emotional Oranges","Ambré","Destin Conrad"]
+  }},
+  weeknd: { name: "The Weeknd", emoji: "🖤", tiers: {
+    // Catégorie spéciale : intégralité du catalogue iTunes de The Weeknd (~200 titres)
+    f: ["The Weeknd"], i: ["The Weeknd"], x: ["The Weeknd"]
+  }}
+};
+
+// Profondeur de catalogue par niveau : facile = gros hits, expert = deep cuts
+const LEVELS = {
+  f: { label: "Facile",        cls: "f", pools: ["f"],     depth: 40  },
+  i: { label: "Intermédiaire", cls: "i", pools: ["f","i"], depth: 150 },
+  x: { label: "Expert",        cls: "x", pools: ["i","x"], depth: 200 }
+};
+
+// Périodes : filtre sur l'année de sortie (releaseDate iTunes)
+const PERIODS = {
+  all:    { label: "Toutes",      min: 0,    max: 9999 },
+  pre80:  { label: "Avant 1980",  min: 0,    max: 1979 },
+  d80:    { label: "1980–1990",   min: 1980, max: 1989 },
+  d90:    { label: "1990–2000",   min: 1990, max: 1999 },
+  d00:    { label: "2000–2010",   min: 2000, max: 2009 },
+  d10:    { label: "2010–2020",   min: 2010, max: 2019 },
+  post20: { label: "Après 2020",  min: 2020, max: 9999 },
+  pre00:  { label: "Avant 2000",  min: 0,    max: 1999 },
+  post00: { label: "Après 2000",  min: 2000, max: 9999 }
+};
+
+const STAGES = [0.3, 1, 2, 4, 8, 15];
+// Barème dégressif : plus tu trouves tôt, plus tu marques
+const WIN_POINTS = [4, 3, 2.5, 2, 1.5, 1];
+const ARTIST_POINTS = 0.5; // artiste seul, toujours inférieur à la pire victoire
+const HINT_AT = 4; // artiste révélé après 4 échecs
+
+// ---------- État (en mémoire uniquement) ----------
+const state = {
+  cat: null, level: null, period: "all", pendingPeriod: "all", track: null,
+  stage: 0, over: false,
+  artistFound: false, hintShown: false, selectedSug: null,
+  score: 0, streak: 0, bestStreak: 0, found: 0, played: 0,
+  playedIds: new Set(),
+  recentArtists: [],
+  audio: null, stopTimer: null,
+  sugTimer: null, sugAbort: null, sugIndex: -1,
+  pendingCat: null, pendingMode: "prog",
+  classicMode: false, cStart: null, cElapsed: 0, cInterval: null,
+  customArtists: [], customPeriod: "all",
+  versus: null,
+  stats: {}
+};
+Object.keys(CATEGORIES).forEach(k => {
+  state.stats[k] = { played: 0, won: 0, half: 0, lost: 0, points: 0 };
+});
+state.stats.custom = { played: 0, won: 0, half: 0, lost: 0, points: 0 };
+const CUSTOM_META = { name: "Perso", emoji: "⭐" };
+
+// ---------- Utilitaires ----------
+const $ = id => document.getElementById(id);
+const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+const esc = s => (s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+
+function normalize(s) {
+  return (s || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\(.*?\)|\[.*?\]/g, "")
+    .replace(/feat\.?.*$/i, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (a[i-1] !== b[j-1] ? 1 : 0));
+    }
+    prev = cur;
+  }
+  return prev[n];
+}
+
+function fuzzyEq(a, b) {
+  const x = normalize(a), y = normalize(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const tol = Math.max(x.length, y.length) > 8 ? 2 : 1;
+  if (levenshtein(x, y) <= tol) return true;
+  if (y.length >= 5 && (x.includes(y) || (x.length >= Math.max(5, y.length * 0.7) && y.includes(x)))) return true;
+  return false;
+}
+
+function artistEq(a, b) {
+  const x = normalize(a), y = normalize(b);
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x) || levenshtein(x, y) <= 2;
+}
+
+const BANNED = /\b(live|remix|acoustic|acoustique|instrumental|karaok|version|edit|sped up|slowed|reprise|cover|commentary|medley|megamix|mixed)\b/i;
+
+// ---------- Tirage d'un morceau ----------
+function poolForLevel(catKey, lvl) {
+  if (catKey === "custom") return state.customArtists;
+  const cat = CATEGORIES[catKey];
+  return LEVELS[lvl].pools.flatMap(t => cat.tiers[t] || []);
+}
+
+function inPeriod(track, periodKey) {
+  const p = PERIODS[periodKey] || PERIODS.all;
+  if (p.min === 0 && p.max === 9999) return true;
+  if (!track.releaseDate) return false;
+  const y = new Date(track.releaseDate).getFullYear();
+  return y >= p.min && y <= p.max;
+}
+
+// Pondération : certains artistes sortent moins souvent (1 = normal, 0.25 = 4x plus rare)
+const ARTIST_WEIGHTS = {
+  "La Fouine": 0.2   // demande expresse de la direction
+};
+
+function pickArtist(artists) {
+  // Évite les artistes tombés dans les 4 dernières manches (si le pool le permet)
+  let candidates = artists.filter(a => !state.recentArtists.includes(a));
+  if (candidates.length < 3) candidates = artists;
+  const weights = candidates.map(a => ARTIST_WEIGHTS[a] !== undefined ? ARTIST_WEIGHTS[a] : 1);
+  const total = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < candidates.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
+}
+
+async function fetchTrack(catKey, lvl, periodKey) {
+  const artists = poolForLevel(catKey, lvl);
+  const depth = LEVELS[lvl].depth;
+  // Avec un filtre de période, certains artistes n'auront rien : on retente plus
+  const maxAttempts = periodKey === "all" ? 6 : 12;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const artist = pickArtist(artists);
+    try {
+      const url = "https://itunes.apple.com/search?media=music&entity=song&limit=200&country=FR&term=" + encodeURIComponent(artist);
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const artistNorm = normalize(artist);
+      // Les résultats iTunes sont triés par pertinence :
+      // profondeur limitée selon le niveau (facile = hits seulement)
+      let pool = (data.results || []).slice(0, depth).filter(t =>
+        t.previewUrl && t.trackName &&
+        !BANNED.test(t.trackName) &&
+        !state.playedIds.has(t.trackId) &&
+        inPeriod(t, periodKey) &&
+        normalize(t.artistName).includes(artistNorm.slice(0, Math.min(artistNorm.length, 8)))
+      );
+      const seen = new Set();
+      pool = pool.filter(t => {
+        const key = normalize(t.trackName) + "|" + normalize(t.artistName);
+        if (seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      if (pool.length) {
+        state.recentArtists.push(artist);
+        if (state.recentArtists.length > 4) state.recentArtists.shift();
+        return rand(pool);
+      }
+    } catch (e) { /* on retente */ }
+  }
+  return null;
+}
+
+// ---------- Autocomplete (refonte) ----------
+let sugReqId = 0;   // garde de séquence : seule la requête la plus récente peut s'afficher
+let sugList = [];   // liste courante de suggestions (source de vérité)
+let dzId = 0;
+const sugCache = new Map(); // cache : évite de re-taper les mêmes requêtes (et les limites d'API)
+
+// Recherche Deezer en JSONP : limites bien plus généreuses que l'API iTunes
+// (iTunes = ~20 requêtes/minute, vite grillées par un autocomplete)
+function deezerSearch(q, path) {
+  return new Promise((resolve, reject) => {
+    const cb = "dzcb_" + (++dzId);
+    const s = document.createElement("script");
+    let done = false;
+    const cleanup = () => { try { delete window[cb]; } catch (e) {} s.remove(); };
+    window[cb] = data => { done = true; cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error("deezer_error")); };
+    s.src = "https://api.deezer.com/search" + (path || "") + "?q=" + encodeURIComponent(q) +
+      "&limit=12&output=jsonp&callback=" + cb;
+    document.head.appendChild(s);
+    setTimeout(() => { if (!done) { cleanup(); reject(new Error("deezer_timeout")); } }, 4000);
+  });
+}
+
+function dedupeSugs(list) {
+  const seen = new Set();
+  return list.filter(s => {
+    if (!s.title || !s.artist) return false;
+    const key = normalize(s.title) + "|" + normalize(s.artist);
+    if (seen.has(key)) return false;
+    seen.add(key); return true;
+  }).slice(0, 8);
+}
+
+async function searchSuggestions(query) {
+  const cacheKey = normalize(query);
+  if (sugCache.has(cacheKey)) return sugCache.get(cacheKey);
+
+  let list = [];
+  // 1) Deezer (rapide, quasi sans limite pour un usage normal)
+  try {
+    const d = await deezerSearch(query);
+    list = dedupeSugs((d.data || []).map(t => ({
+      title: t.title, artist: t.artist ? t.artist.name : ""
+    })));
+  } catch (e) { /* Deezer KO → on tente iTunes */ }
+
+  // 2) Secours iTunes si Deezer n'a rien donné
+  if (!list.length) {
+    if (state.sugAbort) state.sugAbort.abort();
+    state.sugAbort = new AbortController();
+    const url = "https://itunes.apple.com/search?media=music&entity=song&limit=15&country=FR&term=" + encodeURIComponent(query);
+    const res = await fetch(url, { signal: state.sugAbort.signal });
+    if (res.ok) {
+      const data = await res.json();
+      list = dedupeSugs((data.results || []).map(t => ({
+        title: t.trackName, artist: t.artistName
+      })));
+    }
+  }
+
+  if (list.length) {
+    sugCache.set(cacheKey, list);
+    if (sugCache.size > 80) sugCache.delete(sugCache.keys().next().value);
+  }
+  return list;
+}
+
+// Affiche un message d'état dans la boîte de suggestions (aucun résultat, erreur…)
+function showSugMessage(msg) {
+  const box = $("suggestions");
+  sugList = [];
+  state.sugIndex = -1;
+  box.innerHTML = '<div class="sug-loading">' + esc(msg) + '</div>';
+  box.classList.add("active");
+}
+
+function renderSuggestions(list) {
+  const box = $("suggestions");
+  sugList = list;
+  state.sugIndex = -1;
+  box.innerHTML = "";
+  if (!list.length) { box.classList.remove("active"); return; }
+  list.forEach((s, i) => {
+    const div = document.createElement("div");
+    div.className = "sug";
+    div.innerHTML = `<span class="t">${esc(s.title)}</span><span class="a">${esc(s.artist)}</span>`;
+    // mousedown (pas click) : se déclenche avant tout blur / clic-extérieur
+    div.addEventListener("mousedown", e => { e.preventDefault(); chooseSuggestion(i); });
+    box.appendChild(div);
+  });
+  box.classList.add("active");
+}
+
+// Choisir une suggestion = valider directement la réponse (plus d'état intermédiaire)
+function chooseSuggestion(i) {
+  const s = sugList[i];
+  if (!s || state.over || !state.track) return;
+  hideSuggestions();
+  $("guessInput").value = "";
+  evaluateGuess(s.title, s.artist, s.title + " — " + s.artist, true);
+}
+
+function hideSuggestions() {
+  const box = $("suggestions");
+  box.classList.remove("active");
+  box.innerHTML = "";
+  sugList = [];
+  state.sugIndex = -1;
+}
+
+function highlightSug(dir) {
+  const box = $("suggestions");
+  if (!box.classList.contains("active") || !sugList.length) return;
+  state.sugIndex = (state.sugIndex + dir + sugList.length) % sugList.length;
+  const items = box.querySelectorAll(".sug");
+  items.forEach((el, i) => el.classList.toggle("hl", i === state.sugIndex));
+  if (items[state.sugIndex]) items[state.sugIndex].scrollIntoView({ block: "nearest" });
+}
+
+// ---------- Accueil ----------
+function renderHome() {
+  const grid = $("catGrid");
+  grid.innerHTML = "";
+  const custom = document.createElement("button");
+  custom.className = "cat-card custom";
+  custom.innerHTML = `<span class="emoji">⭐</span>
+    <div class="name">Blind test perso</div>
+    <div class="count">Choisis tes propres artistes</div>`;
+  custom.onclick = openCustomBuilder;
+  grid.appendChild(custom);
+  const vs = document.createElement("button");
+  vs.className = "cat-card versus";
+  vs.innerHTML = `<span class="emoji">⚔️</span>
+    <div class="name">Mode Versus</div>
+    <div class="count">1v1 ou équipes, chacun son tour</div>`;
+  vs.onclick = openVersusBuilder;
+  grid.appendChild(vs);
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const total = cat.tiers.f.length + cat.tiers.i.length + cat.tiers.x.length;
+    const btn = document.createElement("button");
+    btn.className = "cat-card";
+    btn.innerHTML = `<span class="emoji">${cat.emoji}</span>
+      <div class="name">${cat.name}</div>
+      <div class="count">${total} artistes · 3 niveaux</div>`;
+    btn.onclick = () => openLevelChooser(key);
+    grid.appendChild(btn);
+  });
+  renderKaraokeHome();
+}
+
+// Grille de l'onglet Paroles : chaque carte ouvre la config avec la catégorie présélectionnée
+function renderKaraokeHome() {
+  const grid = $("kCatGrid");
+  grid.innerHTML = "";
+  if (state.customArtists.length) {
+    const custom = document.createElement("button");
+    custom.className = "cat-card custom";
+    custom.innerHTML = `<span class="emoji">⭐</span>
+      <div class="name">Perso</div>
+      <div class="count">${state.customArtists.length} artistes sélectionnés</div>`;
+    custom.onclick = () => { kConfig.cat = "custom"; openKaraokeBuilder(); };
+    grid.appendChild(custom);
+  }
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const btn = document.createElement("button");
+    btn.className = "cat-card karaoke";
+    btn.innerHTML = `<span class="emoji">${cat.emoji}</span>
+      <div class="name">${cat.name}</div>
+      <div class="count">Complète les paroles</div>`;
+    btn.onclick = () => { kConfig.cat = key; openKaraokeBuilder(); };
+    grid.appendChild(btn);
+  });
+}
+
+// Grille de l'onglet Classique : mêmes catégories, mode chrono
+function renderClassicHome() {
+  const grid = $("cCatGrid");
+  grid.innerHTML = "";
+  const rush = document.createElement("button");
+  rush.className = "cat-card classic";
+  rush.style.borderColor = "var(--gold)";
+  rush.innerHTML = `<span class="emoji">⚡</span>
+    <div class="name">Rush 60 secondes</div>
+    <div class="count">Que des hits — enchaîne un max de sons</div>`;
+  rush.onclick = openRushBuilder;
+  grid.appendChild(rush);
+  if (state.customArtists.length) {
+    const custom = document.createElement("button");
+    custom.className = "cat-card custom";
+    custom.innerHTML = `<span class="emoji">⭐</span>
+      <div class="name">Perso</div>
+      <div class="count">${state.customArtists.length} artistes sélectionnés</div>`;
+    custom.onclick = () => openLevelChooser("custom", "classic");
+    grid.appendChild(custom);
+  }
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const btn = document.createElement("button");
+    btn.className = "cat-card classic";
+    btn.innerHTML = `<span class="emoji">${cat.emoji}</span>
+      <div class="name">${cat.name}</div>
+      <div class="count">30s chrono — réponds vite</div>`;
+    btn.onclick = () => openLevelChooser(key, "classic");
+    grid.appendChild(btn);
+  });
+}
+
+// ---------- Onglets ----------
+let currentTab = "blind";
+function setTab(tab) {
+  currentTab = tab;
+  $("tabBlind").classList.toggle("active", tab === "blind");
+  $("tabClassic").classList.toggle("active", tab === "classic");
+  $("tabKaraoke").classList.toggle("active", tab === "karaoke");
+  $("panelBlind").style.display = tab === "blind" ? "block" : "none";
+  $("panelClassic").style.display = tab === "classic" ? "block" : "none";
+  $("panelKaraoke").style.display = tab === "karaoke" ? "block" : "none";
+  if (tab === "karaoke") renderKaraokeHome();
+  if (tab === "classic") renderClassicHome();
+}
+$("tabBlind").onclick = () => setTab("blind");
+$("tabClassic").onclick = () => setTab("classic");
+$("tabKaraoke").onclick = () => setTab("karaoke");
+
+// ---------- Choix de la période + du niveau ----------
+function renderPeriodChips() {
+  const box = $("periodChips");
+  box.innerHTML = "";
+  Object.entries(PERIODS).forEach(([key, p]) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (state.pendingPeriod === key ? " sel" : "");
+    chip.textContent = p.label;
+    chip.onclick = () => { state.pendingPeriod = key; renderPeriodChips(); };
+    box.appendChild(chip);
+  });
+}
+
+function openLevelChooser(catKey, mode) {
+  state.pendingCat = catKey;
+  state.pendingMode = mode || "prog";
+  state.pendingPeriod = "all";
+  const label = catKey === "custom" ? "⭐ Perso" : CATEGORIES[catKey].emoji + " " + CATEGORIES[catKey].name;
+  $("lvlCatName").textContent = (state.pendingMode === "classic" ? "🎵 " : "") + label;
+  renderPeriodChips();
+  $("lvlOverlay").classList.add("active");
+}
+document.querySelectorAll(".lvl-btn").forEach(btn => {
+  btn.onclick = () => {
+    const lvl = btn.dataset.lvl;
+    $("lvlOverlay").classList.remove("active");
+    startCategory(state.pendingCat, lvl, state.pendingPeriod);
+  };
+});
+$("lvlClose").onclick = () => $("lvlOverlay").classList.remove("active");
+
+// ---------- Blind test perso ----------
+let customSugTimer = null, customSugAbort = null;
+
+function openCustomBuilder() {
+  state.customPeriod = "all";
+  $("customInput").value = "";
+  $("customSugs").classList.remove("active");
+  $("customWarn").style.display = "none";
+  renderCustomChips();
+  renderCustomPeriodChips();
+  $("customOverlay").classList.add("active");
+  $("customInput").focus();
+}
+
+async function searchArtists(query) {
+  // Deezer d'abord (limites généreuses), iTunes en secours
+  let names = [];
+  try {
+    const d = await deezerSearch(query, "/artist");
+    names = (d.data || []).map(a => a.name).filter(Boolean);
+  } catch (e) { /* fallback */ }
+  if (!names.length) {
+    if (customSugAbort) customSugAbort.abort();
+    customSugAbort = new AbortController();
+    try {
+      const url = "https://itunes.apple.com/search?media=music&entity=musicArtist&limit=8&country=FR&term=" + encodeURIComponent(query);
+      const res = await fetch(url, { signal: customSugAbort.signal });
+      if (res.ok) {
+        const data = await res.json();
+        names = (data.results || []).map(a => a.artistName).filter(Boolean);
+      }
+    } catch (e) { return []; }
+  }
+  const seen = new Set();
+  return names.filter(n => {
+    const key = normalize(n);
+    if (seen.has(key) || state.customArtists.some(x => normalize(x) === key)) return false;
+    seen.add(key); return true;
+  }).slice(0, 8);
+}
+
+function renderCustomSugs(list) {
+  const box = $("customSugs");
+  box.innerHTML = "";
+  if (!list.length) { box.classList.remove("active"); return; }
+  list.forEach(name => {
+    const div = document.createElement("div");
+    div.className = "sug";
+    div.innerHTML = `<span class="t">${esc(name)}</span>`;
+    div.onclick = () => addCustomArtist(name);
+    box.appendChild(div);
+  });
+  box.classList.add("active");
+}
+
+function addCustomArtist(name) {
+  if (state.customArtists.length >= 30) return;
+  if (!state.customArtists.some(a => normalize(a) === normalize(name))) {
+    state.customArtists.push(name);
+  }
+  $("customInput").value = "";
+  $("customSugs").classList.remove("active");
+  $("customWarn").style.display = "none";
+  renderCustomChips();
+  $("customInput").focus();
+}
+
+function removeCustomArtist(name) {
+  state.customArtists = state.customArtists.filter(a => a !== name);
+  renderCustomChips();
+}
+
+function renderCustomChips() {
+  const box = $("customChips");
+  box.innerHTML = "";
+  if (!state.customArtists.length) {
+    box.innerHTML = '<span style="color:var(--txt-dim);font-size:.8rem">Aucun artiste pour l\'instant…</span>';
+    return;
+  }
+  state.customArtists.forEach(name => {
+    const chip = document.createElement("span");
+    chip.className = "achip";
+    chip.innerHTML = esc(name);
+    const del = document.createElement("button");
+    del.textContent = "✕";
+    del.onclick = () => removeCustomArtist(name);
+    chip.appendChild(del);
+    box.appendChild(chip);
+  });
+}
+
+function renderCustomPeriodChips() {
+  const box = $("customPeriodChips");
+  box.innerHTML = "";
+  Object.entries(PERIODS).forEach(([key, p]) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (state.customPeriod === key ? " sel" : "");
+    chip.textContent = p.label;
+    chip.onclick = () => { state.customPeriod = key; renderCustomPeriodChips(); };
+    box.appendChild(chip);
+  });
+}
+
+$("customInput").addEventListener("input", () => {
+  const q = $("customInput").value.trim();
+  if (customSugTimer) clearTimeout(customSugTimer);
+  if (q.length < 2) { $("customSugs").classList.remove("active"); return; }
+  customSugTimer = setTimeout(async () => {
+    const list = await searchArtists(q);
+    if ($("customInput").value.trim().length >= 2) renderCustomSugs(list);
+  }, 300);
+});
+$("customInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const first = $("customSugs").querySelector(".sug .t");
+    if (first) addCustomArtist(first.textContent);
+  }
+});
+
+document.querySelectorAll(".custom-lvl").forEach(btn => {
+  btn.onclick = () => {
+    if (!state.customArtists.length) { $("customWarn").style.display = "block"; return; }
+    const lvl = btn.dataset.lvl;
+    $("customOverlay").classList.remove("active");
+    startCustomGame(lvl);
+  };
+});
+$("customClose").onclick = () => $("customOverlay").classList.remove("active");
+
+function startCustomGame(lvl) {
+  state.cat = "custom";
+  state.level = lvl;
+  state.period = state.customPeriod;
+  state.classicMode = false;
+  state.rushMode = false;
+  $("home").classList.add("hidden");
+  $("game").classList.add("active");
+  const L = LEVELS[lvl];
+  const pLabel = state.period !== "all" ? " · " + PERIODS[state.period].label : "";
+  const n = state.customArtists.length;
+  $("catPill").innerHTML = "⭐ Perso (" + n + " artiste" + (n > 1 ? "s" : "") + ")" +
+    ' · <span class="lvl ' + L.cls + '">' + L.label + '</span>' + esc(pLabel);
+  newRound();
+}
+
+// ---------- Mode Versus ----------
+const VS_MODES = { solo: "Joueurs (1v1 ou +)", team: "Équipes" };
+const VS_ROUNDS = [3, 5, 10];
+const vsConfig = { mode: "solo", names: [], rounds: 5, cat: "rapfr", period: "all", level: null };
+
+function openVersusBuilder() {
+  $("vsWarn").style.display = "none";
+  $("vsNameInput").value = "";
+  renderVsModeChips();
+  renderVsChips();
+  renderVsRoundChips();
+  renderVsCatSelect();
+  renderVsPeriodChips();
+  $("vsOverlay").classList.add("active");
+  $("vsNameInput").focus();
+}
+
+function renderVsModeChips() {
+  const box = $("vsModeChips");
+  box.innerHTML = "";
+  Object.entries(VS_MODES).forEach(([key, label]) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (vsConfig.mode === key ? " sel" : "");
+    chip.textContent = label;
+    chip.onclick = () => {
+      vsConfig.mode = key;
+      $("vsNameInput").placeholder = key === "team" ? "Nom de l'équipe…" : "Nom du joueur…";
+      renderVsModeChips();
+    };
+    box.appendChild(chip);
+  });
+}
+
+function addVsName() {
+  const name = $("vsNameInput").value.trim();
+  if (!name || vsConfig.names.length >= 10) return;
+  if (!vsConfig.names.some(n => normalize(n) === normalize(name))) {
+    vsConfig.names.push(name);
+  }
+  $("vsNameInput").value = "";
+  $("vsWarn").style.display = "none";
+  renderVsChips();
+  $("vsNameInput").focus();
+}
+
+function renderVsChips() {
+  const box = $("vsChips");
+  box.innerHTML = "";
+  if (!vsConfig.names.length) {
+    box.innerHTML = '<span style="color:var(--txt-dim);font-size:.8rem">Personne pour l\'instant… ajoute des noms !</span>';
+    return;
+  }
+  vsConfig.names.forEach(name => {
+    const chip = document.createElement("span");
+    chip.className = "achip";
+    chip.innerHTML = esc(name);
+    const del = document.createElement("button");
+    del.textContent = "✕";
+    del.onclick = () => {
+      vsConfig.names = vsConfig.names.filter(n => n !== name);
+      renderVsChips();
+    };
+    chip.appendChild(del);
+    box.appendChild(chip);
+  });
+}
+
+function renderVsRoundChips() {
+  const box = $("vsRoundChips");
+  box.innerHTML = "";
+  VS_ROUNDS.forEach(r => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (vsConfig.rounds === r ? " sel" : "");
+    chip.textContent = r + " manches";
+    chip.onclick = () => { vsConfig.rounds = r; renderVsRoundChips(); };
+    box.appendChild(chip);
+  });
+}
+
+function renderVsCatSelect() {
+  const sel = $("vsCatSelect");
+  sel.innerHTML = "";
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = cat.emoji + " " + cat.name;
+    sel.appendChild(opt);
+  });
+  if (state.customArtists.length) {
+    const opt = document.createElement("option");
+    opt.value = "custom";
+    opt.textContent = "⭐ Perso (" + state.customArtists.length + " artistes)";
+    sel.appendChild(opt);
+  }
+  sel.value = vsConfig.cat in CATEGORIES || (vsConfig.cat === "custom" && state.customArtists.length) ? vsConfig.cat : "rapfr";
+  sel.onchange = () => { vsConfig.cat = sel.value; };
+  vsConfig.cat = sel.value;
+}
+
+function renderVsPeriodChips() {
+  const box = $("vsPeriodChips");
+  box.innerHTML = "";
+  Object.entries(PERIODS).forEach(([key, p]) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (vsConfig.period === key ? " sel" : "");
+    chip.textContent = p.label;
+    chip.onclick = () => { vsConfig.period = key; renderVsPeriodChips(); };
+    box.appendChild(chip);
+  });
+}
+
+$("vsAddName").onclick = addVsName;
+$("vsNameInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addVsName(); } });
+$("vsClose").onclick = () => $("vsOverlay").classList.remove("active");
+
+document.querySelectorAll(".vs-lvl").forEach(btn => {
+  btn.onclick = () => {
+    if (vsConfig.names.length < 2) { $("vsWarn").style.display = "block"; return; }
+    vsConfig.level = btn.dataset.lvl;
+    $("vsOverlay").classList.remove("active");
+    startVersus();
+  };
+});
+
+function startVersus() {
+  state.versus = {
+    players: vsConfig.names.map(n => ({ name: n, score: 0 })),
+    idx: 0,
+    roundNum: 1,
+    totalPerPlayer: vsConfig.rounds
+  };
+  state.cat = vsConfig.cat;
+  state.level = vsConfig.level;
+  state.period = vsConfig.period;
+  state.classicMode = false;
+  state.rushMode = false;
+  $("home").classList.add("hidden");
+  $("game").classList.add("active");
+  const L = LEVELS[state.level];
+  const catName = state.cat === "custom" ? "⭐ Perso" : CATEGORIES[state.cat].emoji + " " + CATEGORIES[state.cat].name;
+  const pLabel = state.period !== "all" ? " · " + PERIODS[state.period].label : "";
+  $("catPill").innerHTML = "⚔️ " + esc(catName) +
+    ' · <span class="lvl ' + L.cls + '">' + L.label + '</span>' + esc(pLabel);
+  newRound();
+}
+
+function updateTurnBanner() {
+  const v = state.versus;
+  const banner = $("turnBanner");
+  if (!v) { banner.style.display = "none"; return; }
+  const p = v.players[v.idx];
+  const label = vsConfig.mode === "team" ? "À l'équipe" : "Au tour de";
+  banner.innerHTML = `🎯 ${label} : <b>${esc(p.name)}</b> — ${Math.round(p.score * 10) / 10} pt${p.score > 1 ? "s" : ""}
+    <div class="round-info">Manche ${v.roundNum}/${v.totalPerPlayer} · passe l'appareil, les autres regardent ailleurs 👀</div>`;
+  banner.style.display = "block";
+}
+
+function versusNext() {
+  const v = state.versus;
+  v.idx++;
+  if (v.idx >= v.players.length) {
+    v.idx = 0;
+    v.roundNum++;
+  }
+  if (v.roundNum > v.totalPerPlayer) { openLeaderboard(); return; }
+  newRound();
+}
+
+function openLeaderboard() {
+  const v = state.versus;
+  const sorted = [...v.players].sort((a, b) => b.score - a.score);
+  const top = sorted[0].score;
+  const winners = sorted.filter(p => p.score === top);
+  $("leadSub").textContent = winners.length > 1
+    ? "Égalité ! " + winners.map(w => w.name).join(" et ") + " se partagent la couronne."
+    : winners[0].name + " remporte le versus !";
+  $("leadList").innerHTML = sorted.map((p, i) => `
+    <div class="lead-row${p.score === top ? " winner" : ""}">
+      <span class="rank">${p.score === top ? "👑" : "#" + (i + 1)}</span>
+      <span class="pname">${esc(p.name)}</span>
+      <span class="pscore">${Math.round(p.score * 10) / 10} pts</span>
+    </div>`).join("");
+  $("leadOverlay").classList.add("active");
+}
+
+$("leadReplay").onclick = () => {
+  $("leadOverlay").classList.remove("active");
+  startVersus();
+};
+$("leadHome").onclick = () => {
+  $("leadOverlay").classList.remove("active");
+  state.versus = null;
+  $("turnBanner").style.display = "none";
+  stopAudio();
+  $("game").classList.remove("active");
+  $("home").classList.remove("hidden");
+};
+
+/* =====================================================
+   MODE PAROLES — "N'oubliez pas les paroles"
+   Les paroles sont récupérées à la volée via l'API
+   publique LRCLIB (aucune parole stockée dans ce fichier).
+   ===================================================== */
+const kConfig = { cat: "varfr", period: "all", level: "f" };
+const kState = { track: null, targetWords: [], over: false, audio: null };
+state.stats.karaoke = { played: 0, won: 0, half: 0, lost: 0, points: 0 };
+const KARAOKE_META = { name: "Paroles", emoji: "🎤" };
+
+function openKaraokeBuilder() {
+  renderKCatSelect();
+  renderKPeriodChips();
+  $("kOverlay").classList.add("active");
+}
+
+function renderKCatSelect() {
+  const sel = $("kCatSelect");
+  sel.innerHTML = "";
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = cat.emoji + " " + cat.name;
+    sel.appendChild(opt);
+  });
+  if (state.customArtists.length) {
+    const opt = document.createElement("option");
+    opt.value = "custom";
+    opt.textContent = "⭐ Perso (" + state.customArtists.length + " artistes)";
+    sel.appendChild(opt);
+  }
+  sel.value = (kConfig.cat in CATEGORIES || (kConfig.cat === "custom" && state.customArtists.length)) ? kConfig.cat : "varfr";
+  sel.onchange = () => { kConfig.cat = sel.value; };
+  kConfig.cat = sel.value;
+}
+
+function renderKPeriodChips() {
+  const box = $("kPeriodChips");
+  box.innerHTML = "";
+  Object.entries(PERIODS).forEach(([key, p]) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (kConfig.period === key ? " sel" : "");
+    chip.textContent = p.label;
+    chip.onclick = () => { kConfig.period = key; renderKPeriodChips(); };
+    box.appendChild(chip);
+  });
+}
+
+document.querySelectorAll(".k-lvl").forEach(btn => {
+  btn.onclick = () => {
+    kConfig.level = btn.dataset.lvl;
+    $("kOverlay").classList.remove("active");
+    startKaraoke();
+  };
+});
+$("kClose").onclick = () => $("kOverlay").classList.remove("active");
+
+function startKaraoke() {
+  $("home").classList.add("hidden");
+  $("game").classList.remove("active");
+  $("kgame").classList.add("active");
+  const L = LEVELS[kConfig.level];
+  const catName = kConfig.cat === "custom" ? "⭐ Perso" : CATEGORIES[kConfig.cat].emoji + " " + CATEGORIES[kConfig.cat].name;
+  $("kPill").innerHTML = "🎤 " + esc(catName) + ' · <span class="lvl ' + L.cls + '">' + L.label + '</span>';
+  newKaraokeRound();
+}
+
+function kStopAudio() {
+  if (kState.audio) { kState.audio.pause(); kState.audio.currentTime = 0; }
+}
+
+async function fetchLyrics(track) {
+  try {
+    const url = "https://lrclib.net/api/search?artist_name=" + encodeURIComponent(track.artistName) +
+      "&track_name=" + encodeURIComponent(track.trackName);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const results = await res.json();
+    const hit = (results || []).find(r => r.plainLyrics && r.plainLyrics.length > 100);
+    return hit ? hit.plainLyrics : null;
+  } catch (e) { return null; }
+}
+
+// Découpe les paroles et choisit un passage : 3 lignes de contexte + 1 ligne à trouver
+function pickPassage(plain) {
+  const lines = plain.split("\n").map(l => l.trim())
+    .filter(l => l.length > 4 && !/^\[.*\]$/.test(l));
+  if (lines.length < 8) return null;
+  // On évite le tout début (trop facile) et la toute fin
+  for (let tries = 0; tries < 15; tries++) {
+    const i = 3 + Math.floor(Math.random() * (lines.length - 5));
+    const target = lines[i];
+    const words = target.split(/\s+/).filter(w => normalize(w).length > 0);
+    if (words.length >= 3 && words.length <= 12) {
+      return { context: lines.slice(Math.max(0, i - 3), i), target, words };
+    }
+  }
+  return null;
+}
+
+async function newKaraokeRound() {
+  kStopAudio();
+  kState.over = false;
+  $("kRound").style.display = "none";
+  $("kError").classList.remove("active");
+  $("kLoading").classList.add("active");
+  $("kReveal").classList.remove("active");
+  $("kGuessZone").style.display = "block";
+  $("kInput").value = "";
+
+  // Jusqu'à 5 morceaux testés pour trouver des paroles disponibles
+  let passage = null, track = null;
+  for (let attempt = 0; attempt < 5 && !passage; attempt++) {
+    track = await fetchTrack(kConfig.cat, kConfig.level, kConfig.period);
+    if (!track) continue;
+    const plain = await fetchLyrics(track);
+    if (plain) passage = pickPassage(plain);
+  }
+  $("kLoading").classList.remove("active");
+  if (!passage) { $("kError").classList.add("active"); return; }
+
+  kState.track = track;
+  kState.targetWords = passage.words;
+  kState.audio = new Audio(track.previewUrl);
+
+  $("kTitle").textContent = track.trackName;
+  $("kArtist").textContent = track.artistName;
+  const blanks = passage.words.map(w =>
+    '<span class="blank" style="min-width:' + Math.max(24, Math.min(90, w.length * 11)) + 'px">&nbsp;</span>'
+  ).join(" ");
+  $("kLyrics").innerHTML = passage.context.map(l => '<div class="ctx">' + esc(l) + '</div>').join("") +
+    '<div class="target">' + blanks + '</div>' +
+    '<div style="color:var(--txt-dim);font-size:.78rem;margin-top:8px">' + passage.words.length + ' mots à trouver</div>';
+
+  $("kRound").style.display = "block";
+  $("kInput").focus();
+}
+
+function kSubmit(gaveUp) {
+  if (kState.over) return;
+  kState.over = true;
+  kStopAudio();
+
+  const guessWords = gaveUp ? [] : $("kInput").value.trim().split(/\s+/).filter(w => normalize(w).length > 0);
+  const target = kState.targetWords;
+  let correct = 0;
+  const diff = target.map((w, i) => {
+    const g = guessWords[i];
+    if (g && (normalize(g) === normalize(w) || levenshtein(normalize(g), normalize(w)) <= 1)) {
+      correct++;
+      return '<span class="ok">' + esc(w) + '</span>';
+    }
+    return '<span class="missed">' + esc(w) + '</span>';
+  });
+
+  const ratio = correct / target.length;
+  // Barème : ligne parfaite = 5 pts, sinon pro rata arrondi au 0.5
+  const pts = Math.round(ratio * 5 * 2) / 2;
+  const ks = state.stats.karaoke;
+  ks.played++;
+  state.played++;
+
+  let verdict, cls;
+  if (ratio === 1) {
+    verdict = "Parfait ! +" + pts + " pts 🎤"; cls = "win";
+    ks.won++; state.found++;
+    state.streak++; state.bestStreak = Math.max(state.bestStreak, state.streak);
+  } else if (ratio >= 0.5) {
+    verdict = correct + "/" + target.length + " mots — +" + pts + " pts"; cls = "half";
+    ks.half++;
+  } else {
+    verdict = gaveUp ? "La voici… 0 pt" : correct + "/" + target.length + " mots — " + (pts > 0 ? "+" + pts + " pts" : "0 pt");
+    cls = "lose";
+    ks.lost++; state.streak = 0;
+  }
+  state.score += pts;
+  ks.points += pts;
+
+  $("score").textContent = (Math.round(state.score * 10) / 10).toString();
+  $("streak").textContent = state.streak;
+  $("found").textContent = state.found;
+  $("played").textContent = state.played;
+
+  $("kVerdict").textContent = verdict;
+  $("kVerdict").className = "verdict " + cls;
+  $("kDiff").innerHTML = diff.join(" ");
+  $("kGuessZone").style.display = "none";
+  $("kReveal").classList.add("active");
+}
+
+$("kSubmit").onclick = () => kSubmit(false);
+$("kSkip").onclick = () => kSubmit(true);
+$("kInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); kSubmit(false); } });
+$("kNext").onclick = newKaraokeRound;
+$("kRetry").onclick = newKaraokeRound;
+$("kPlay").onclick = () => {
+  if (!kState.audio) return;
+  if (kState.audio.paused) kState.audio.play().catch(() => {});
+  else kStopAudio();
+};
+$("kBack").onclick = () => {
+  kStopAudio();
+  $("kgame").classList.remove("active");
+  $("home").classList.remove("hidden");
+  setTab("karaoke");
+};
+
+// ---------- Boucle de jeu ----------
+function startCategory(key, lvl, periodKey) {
+  state.cat = key;
+  state.level = lvl;
+  state.period = periodKey || "all";
+  state.classicMode = state.pendingMode === "classic";
+  state.rushMode = false;
+  $("home").classList.add("hidden");
+  $("game").classList.add("active");
+  const L = LEVELS[lvl];
+  const pLabel = state.period !== "all" ? " · " + PERIODS[state.period].label : "";
+  const catLabel = key === "custom" ? "⭐ Perso" : CATEGORIES[key].emoji + " " + esc(CATEGORIES[key].name);
+  $("catPill").innerHTML = (state.classicMode ? "🎵 " : "") + catLabel +
+    ' · <span class="lvl ' + L.cls + '">' + L.label + '</span>' + esc(pLabel);
+  newRound();
+}
+
+async function newRound() {
+  stopAudio();
+  Object.assign(state, { stage: 0, over: false, track: null, artistFound: false, hintShown: false, selectedSug: null });
+
+  $("round").style.display = "none";
+  $("errorBox").classList.remove("active");
+  $("loading").classList.add("active");
+  $("attempts").innerHTML = "";
+  $("hintArtist").textContent = "";
+  $("guessInput").value = "";
+  hideSuggestions();
+  $("reveal").classList.remove("active");
+  $("guessZone").style.display = "block";
+
+  const track = await fetchTrack(state.cat, state.level, state.period);
+  $("loading").classList.remove("active");
+  if (!track) { $("errorBox").classList.add("active"); return; }
+
+  state.track = track;
+  state.playedIds.add(track.trackId);
+  state.audio = new Audio(track.previewUrl);
+  state.audio.preload = "auto";
+
+  // Affichage selon le mode
+  stopClassicTimer();
+  state.cStart = null;
+  state.cElapsed = 0;
+  $("cTimer").style.display = state.classicMode ? "block" : "none";
+  $("cTimer").textContent = state.classicMode ? "⏱ 0.0s" : "";
+  $("wave").style.display = state.classicMode ? "none" : "flex";
+  $("btnSkip").textContent = state.classicMode ? "J'abandonne (révéler)" : "Passer (débloque plus d'audio)";
+
+  renderWave();
+  $("round").style.display = "block";
+  updateTurnBanner();
+  updatePlayHint();
+  $("guessInput").focus();
+}
+
+function renderWave() {
+  const wave = $("wave");
+  wave.innerHTML = "";
+  STAGES.forEach((dur, i) => {
+    const seg = document.createElement("div");
+    seg.className = "seg";
+    seg.dataset.dur = dur + "s";
+    seg.dataset.pts = WIN_POINTS[i];
+    if (i < state.stage) seg.classList.add("burned");
+    else if (i === state.stage) seg.classList.add("unlocked");
+    wave.appendChild(seg);
+  });
+}
+
+function updatePlayHint() {
+  if (state.rushMode) {
+    $("playHint").textContent = state.over ? "Rush terminé" : "Ça défile — réponds ou passe !";
+    return;
+  }
+  if (state.classicMode) {
+    $("playHint").textContent = state.over ? "Manche terminée"
+      : (state.cStart ? "Ça tourne — réponds vite !" : "Clique ▶ pour lancer les 30s");
+    return;
+  }
+  $("playHint").textContent = state.over
+    ? "Manche terminée"
+    : `Essai ${state.stage + 1}/${STAGES.length} — extrait de ${STAGES[state.stage]}s`;
+}
+
+function stopAudio() {
+  if (state.stopTimer) { clearTimeout(state.stopTimer); state.stopTimer = null; }
+  if (state.audio) { state.audio.pause(); state.audio.currentTime = 0; }
+}
+
+// Mode enceinte : rallonge chaque extrait pour compenser la latence Bluetooth
+state.btMode = false;
+const BT_PAD = 0.45; // secondes ajoutées à chaque palier en mode enceinte
+
+// ---------- Mode classique : 30s chrono ----------
+function classicPoints(sec) {
+  if (sec <= 3) return 4;
+  if (sec <= 6) return 3;
+  if (sec <= 10) return 2.5;
+  if (sec <= 15) return 2;
+  if (sec <= 22) return 1.5;
+  return 1;
+}
+
+function stopClassicTimer() {
+  if (state.cInterval) { clearInterval(state.cInterval); state.cInterval = null; }
+}
+
+function startClassicRound() {
+  if (state.cStart || state.over) return; // déjà lancé
+  state.cStart = Date.now();
+  state.audio.currentTime = 0;
+  state.audio.play().catch(() => {});
+  state.audio.onended = () => { if (!state.over) classicTimeUp(); };
+  state.cInterval = setInterval(() => {
+    const el = (Date.now() - state.cStart) / 1000;
+    state.cElapsed = el;
+    $("cTimer").textContent = "⏱ " + el.toFixed(1) + "s";
+    // Indice artiste à 18s (comme toujours : l'indice gratuit tue le demi-point)
+    if (el >= 18 && !state.hintShown && !state.artistFound) {
+      $("hintArtist").textContent = "💡 Indice : " + state.track.artistName;
+      state.hintShown = true;
+    }
+    if (el >= 31 && !state.over) classicTimeUp();
+  }, 100);
+}
+
+function classicTimeUp() {
+  stopClassicTimer();
+  endRound(false);
+}
+
+function playSegment() {
+  if (!state.audio || state.over) return;
+  if (state.rushMode) { state.audio.currentTime = 0; state.audio.play().catch(() => {}); return; }
+  if (state.classicMode) { startClassicRound(); return; }
+  stopAudio();
+  const dur = STAGES[state.stage] + (state.btMode ? BT_PAD : 0);
+  const audio = state.audio;
+  audio.currentTime = 0;
+  // Arrêt basé sur le temps de lecture RÉEL (timeupdate), pas sur un chrono
+  // lancé au clic : le buffering / la latence de démarrage ne mangent plus l'extrait
+  const onTime = () => {
+    if (audio.currentTime >= dur) {
+      audio.removeEventListener("timeupdate", onTime);
+      stopAudio();
+    }
+  };
+  audio.addEventListener("timeupdate", onTime);
+  audio.play().catch(() => {});
+  // Filet de sécurité si timeupdate ne se déclenche pas
+  state.stopTimer = setTimeout(() => {
+    audio.removeEventListener("timeupdate", onTime);
+    stopAudio();
+  }, (dur + 3) * 1000);
+}
+
+function addAttempt(text, half) {
+  const div = document.createElement("div");
+  div.className = "attempt" + (half ? " half" : "");
+  div.innerHTML = `<span class="x">${half ? "~" : "✗"}</span> <span>${esc(text)}</span>`;
+  $("attempts").prepend(div);
+}
+
+function advanceStage() {
+  state.stage++;
+  if (state.stage >= HINT_AT && state.track && !state.artistFound && !state.hintShown) {
+    $("hintArtist").textContent = "💡 Indice : " + state.track.artistName;
+    state.hintShown = true;
+  }
+  if (state.stage >= STAGES.length) { endRound(false); return; }
+  renderWave();
+  updatePlayHint();
+}
+
+// Évaluation d'une réponse (suggestion ou texte libre)
+function evaluateGuess(gTitle, gArtist, label, fromSug) {
+  if (state.rushMode) { rushEvaluate(gTitle, label); return; }
+  const titleOk = fuzzyEq(gTitle, state.track.trackName);
+  const artistOk = artistEq(gArtist, state.track.artistName);
+
+  if (titleOk && artistOk) { endRound(true); return; }
+  if (titleOk && !fromSug) { endRound(true); return; } // texte libre : le titre suffit
+
+  if (artistOk && !state.hintShown && !state.artistFound) {
+    state.artistFound = true;
+    $("hintArtist").textContent = "🟡 Bon artiste (" + state.track.artistName + ") — trouve le titre !";
+    addAttempt(label + " → bon artiste, mauvais titre", true);
+  } else {
+    addAttempt(label, false);
+  }
+  if (!state.classicMode) advanceStage(); // classique : essais illimités, c'est le chrono qui punit
+}
+
+function submitGuess() {
+  if (state.over || !state.track) return;
+  const raw = $("guessInput").value.trim();
+  if (!raw) return;
+  $("guessInput").value = "";
+  hideSuggestions();
+  evaluateGuess(raw, raw, raw, false);
+}
+
+function endRound(won) {
+  state.over = true;
+  stopClassicTimer();
+  stopAudio();
+  state.played++;
+  const cs = state.stats[state.cat];
+  cs.played++;
+
+  let verdict, cls, pts = 0;
+  if (won) {
+    if (state.classicMode) {
+      stopClassicTimer();
+      const sec = Math.round(state.cElapsed * 10) / 10;
+      pts = state.cStart ? classicPoints(state.cElapsed) : 1; // trouvé sans lancer l'audio ? petit malin : 1 pt
+      verdict = "Trouvé en " + sec + "s ! +" + pts + " pts";
+    } else {
+      const stageIdx = Math.min(state.stage, STAGES.length - 1);
+      pts = WIN_POINTS[stageIdx];
+      verdict = "Trouvé en " + STAGES[stageIdx] + "s ! +" + pts + " pts";
+    }
+    state.streak++;
+    state.bestStreak = Math.max(state.bestStreak, state.streak);
+    state.found++;
+    cs.won++;
+    cls = "win";
+  } else if (state.artistFound) {
+    pts = ARTIST_POINTS;
+    cs.half++;
+    verdict = "Artiste trouvé — +" + ARTIST_POINTS + " pt"; cls = "half";
+  } else {
+    state.streak = 0;
+    cs.lost++;
+    verdict = "Perdu…"; cls = "lose";
+  }
+  state.score += pts;
+  cs.points += pts;
+
+  if (state.versus) {
+    const p = state.versus.players[state.versus.idx];
+    p.score += pts;
+    verdict += " · " + p.name;
+    updateTurnBanner();
+  }
+
+  $("score").textContent = (Math.round(state.score * 10) / 10).toString();
+  $("streak").textContent = state.streak;
+  $("found").textContent = state.found;
+  $("played").textContent = state.played;
+
+  $("verdict").textContent = verdict;
+  $("verdict").className = "verdict " + cls;
+  const art = (state.track.artworkUrl100 || "").replace("100x100", "400x400");
+  $("artwork").src = art;
+  $("revealTitle").textContent = state.track.trackName;
+  $("revealArtist").textContent = state.track.artistName;
+  $("guessZone").style.display = "none";
+  $("reveal").classList.add("active");
+  renderWave();
+  updatePlayHint();
+}
+
+// ---------- Stats ----------
+function openStats() {
+  const halfTotal = Object.values(state.stats).reduce((a, s) => a + s.half, 0);
+  const total = state.played;
+  const winPct = total ? Math.round(((state.found + 0.5 * halfTotal) / total) * 100) : null;
+  $("stTotal").textContent = total;
+  $("stAcc").textContent = winPct === null ? "—" : winPct + "%";
+  $("stBest").textContent = state.bestStreak;
+
+  const allCats = Object.assign({}, CATEGORIES, { custom: CUSTOM_META, karaoke: KARAOKE_META, rush: RUSH_META });
+  const rows = Object.entries(allCats)
+    .filter(([k]) => state.stats[k] && state.stats[k].played > 0)
+    .map(([k, cat]) => {
+      const s = state.stats[k];
+      return `<tr>
+        <td>${cat.emoji} ${esc(cat.name)}</td>
+        <td>${s.played}</td>
+        <td>${s.won}</td>
+        <td>${s.half}</td>
+        <td>${s.lost}</td>
+        <td class="pts">${Math.round(s.points * 10) / 10}</td>
+      </tr>`;
+    }).join("");
+
+  $("statsTable").innerHTML = rows
+    ? `<tr><th>Catégorie</th><th>Joués</th><th>✅</th><th>🟡</th><th>❌</th><th>Pts</th></tr>` + rows
+    : `<tr><td style="text-align:center;color:var(--txt-dim);padding:20px">Joue au moins une manche pour voir tes stats.</td></tr>`;
+
+  $("statsOverlay").classList.add("active");
+}
+$("btnStats").onclick = openStats;
+$("statsClose").onclick = () => $("statsOverlay").classList.remove("active");
+
+// ---------- Événements ----------
+$("btnPlay").onclick = playSegment;
+$("btnBt").onclick = () => {
+  state.btMode = !state.btMode;
+  $("btnBt").textContent = "🔊 Mode enceinte : " + (state.btMode ? "ON (+" + BT_PAD + "s)" : "OFF");
+};
+$("btnGuess").onclick = submitGuess;
+$("btnSkip").onclick = () => {
+  if (state.over) return;
+  if (state.rushMode) { state.rush.combo = 0; addAttempt("⏭ (passé) " + state.track.trackName + " — " + state.track.artistName, false); updateRushTimer(); nextRushTrack(); return; }
+  if (state.classicMode) { endRound(false); return; }
+  addAttempt("(passé)", false); advanceStage();
+};
+$("btnNext").onclick = () => {
+  if (state.rushMode) { startRush(); return; }
+  if (state.versus) versusNext(); else newRound();
+};
+$("btnRetry").onclick = () => {
+  if (state.rushMode) { startRush(); return; }
+  if (state.versus) versusNext(); else newRound();
+};
+$("btnFull").onclick = () => { stopAudio(); if (state.audio) state.audio.play().catch(() => {}); };
+$("btnBack").onclick = () => {
+  stopAudio();
+  stopClassicTimer();
+  if (state.rush && state.rush.interval) { clearInterval(state.rush.interval); state.rush.interval = null; }
+  const wasRush = state.rushMode;
+  state.rushMode = false;
+  state.versus = null;
+  $("turnBanner").style.display = "none";
+  $("artwork").style.display = "";
+  $("btnFull").style.display = "";
+  $("game").classList.remove("active");
+  $("home").classList.remove("hidden");
+  setTab(wasRush || state.classicMode ? "classic" : "blind");
+};
+$("logo").onclick = () => {
+  $("btnBack").onclick();
+  if (typeof kStopAudio === "function") { kStopAudio(); }
+  $("kgame").classList.remove("active");
+  $("home").classList.remove("hidden");
+};
+document.querySelectorAll(".overlay").forEach(ov => {
+  ov.addEventListener("click", e => { if (e.target === ov) ov.classList.remove("active"); });
+});
+
+const input = $("guessInput");
+input.addEventListener("input", () => {
+  const q = input.value.trim();
+  if (state.sugTimer) clearTimeout(state.sugTimer);
+  if (q.length < 2) { hideSuggestions(); return; }
+  state.sugTimer = setTimeout(async () => {
+    const myId = ++sugReqId;
+    let list = [], failed = false;
+    try { list = await searchSuggestions(q); }
+    catch (e) { if (e.name === "AbortError") return; failed = true; }
+    if (myId !== sugReqId) return;              // une requête plus récente a pris la main
+    if (input.value.trim().length < 2) { hideSuggestions(); return; }
+    if (failed) { showSugMessage("⚠️ Recherche indisponible — réessaie dans quelques secondes"); return; }
+    if (!list.length) { showSugMessage("Aucun résultat… vérifie l'orthographe ou valide en texte libre"); return; }
+    renderSuggestions(list);
+  }, 300);
+});
+input.addEventListener("keydown", e => {
+  const open = $("suggestions").classList.contains("active");
+  if (e.key === "ArrowDown") { e.preventDefault(); highlightSug(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); highlightSug(-1); }
+  else if (e.key === "Escape") { hideSuggestions(); }
+  else if (e.key === "Tab" && open && sugList.length) {
+    e.preventDefault();
+    chooseSuggestion(state.sugIndex >= 0 ? state.sugIndex : 0);
+  }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    if (open && sugList.length) {
+      chooseSuggestion(state.sugIndex >= 0 ? state.sugIndex : 0);
+      return;
+    }
+    submitGuess();
+  }
+});
+document.addEventListener("click", e => {
+  if (!e.target.closest(".search-wrap")) hideSuggestions();
+});
+
+// ---------- Mode Rush 60 secondes ----------
+const rushConfig = { cat: "rapfr", period: "all" };
+const RUSH_DURATION = 60;
+const RUSH_HITS_PER_ARTIST = 10; // que le très connu : top 10 de chaque artiste
+state.stats.rush = { played: 0, won: 0, half: 0, lost: 0, points: 0 };
+const RUSH_META = { name: "Rush", emoji: "⚡" };
+state.rushMode = false;
+state.rush = null;
+
+function openRushBuilder() {
+  const sel = $("rushCatSelect");
+  sel.innerHTML = "";
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = cat.emoji + " " + cat.name;
+    sel.appendChild(opt);
+  });
+  sel.value = rushConfig.cat in CATEGORIES ? rushConfig.cat : "rapfr";
+  sel.onchange = () => { rushConfig.cat = sel.value; };
+  rushConfig.cat = sel.value;
+  renderRushPeriodChips();
+  $("rushOverlay").classList.add("active");
+}
+function renderRushPeriodChips() {
+  const box = $("rushPeriodChips");
+  box.innerHTML = "";
+  Object.entries(PERIODS).forEach(([key, p]) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (rushConfig.period === key ? " sel" : "");
+    chip.textContent = p.label;
+    chip.onclick = () => { rushConfig.period = key; renderRushPeriodChips(); };
+    box.appendChild(chip);
+  });
+}
+$("rushClose").onclick = () => $("rushOverlay").classList.remove("active");
+$("rushStart").onclick = () => { $("rushOverlay").classList.remove("active"); startRush(); };
+
+// Pré-construit un pool de gros hits AVANT le chrono : zéro requête pendant le rush
+async function buildRushPool() {
+  const artists = [...CATEGORIES[rushConfig.cat].tiers.f]; // tier facile uniquement = les stars
+  for (let i = artists.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [artists[i], artists[j]] = [artists[j], artists[i]];
+  }
+  const picked = artists.slice(0, 10);
+  const pool = [];
+  const results = await Promise.all(picked.map(async artist => {
+    try {
+      const url = "https://itunes.apple.com/search?media=music&entity=song&limit=50&country=FR&term=" + encodeURIComponent(artist);
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      const artistNorm = normalize(artist);
+      const seen = new Set();
+      return (data.results || [])
+        .filter(t => t.previewUrl && t.trackName && !BANNED.test(t.trackName) &&
+          inPeriod(t, rushConfig.period) &&
+          normalize(t.artistName).includes(artistNorm.slice(0, Math.min(artistNorm.length, 8))))
+        .filter(t => {
+          const key = normalize(t.trackName);
+          if (seen.has(key)) return false;
+          seen.add(key); return true;
+        })
+        .slice(0, RUSH_HITS_PER_ARTIST); // le haut du tri iTunes = les plus connus
+    } catch (e) { return []; }
+  }));
+  results.forEach(r => pool.push(...r));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+}
+
+async function startRush() {
+  state.rushMode = true;
+  state.classicMode = false;
+  state.versus = null;
+  state.cat = rushConfig.cat;
+  $("home").classList.add("hidden");
+  $("game").classList.add("active");
+  $("turnBanner").style.display = "none";
+  $("catPill").innerHTML = "⚡ Rush · " + CATEGORIES[rushConfig.cat].emoji + " " + esc(CATEGORIES[rushConfig.cat].name);
+
+  $("round").style.display = "none";
+  $("errorBox").classList.remove("active");
+  $("loading").classList.add("active");
+  $("attempts").innerHTML = "";
+  $("hintArtist").textContent = "";
+  $("guessInput").value = "";
+  hideSuggestions();
+  $("reveal").classList.remove("active");
+  $("guessZone").style.display = "block";
+
+  const pool = await buildRushPool();
+  $("loading").classList.remove("active");
+  if (pool.length < 10) { state.rushMode = false; $("errorBox").classList.add("active"); return; }
+
+  state.rush = { pool, idx: 0, found: 0, combo: 0, maxCombo: 0, timeLeft: RUSH_DURATION, interval: null };
+  state.over = false;
+  state.artistFound = false; state.hintShown = true; // pas d'indice ni de demi-point en rush
+
+  $("cTimer").style.display = "block";
+  $("wave").style.display = "none";
+  $("btnSkip").textContent = "⏭ Passer ce son (combo remis à zéro)";
+  $("artwork").style.display = "";
+  $("btnFull").style.display = "";
+  $("round").style.display = "block";
+  updatePlayHint();
+
+  nextRushTrack();
+  state.rush.interval = setInterval(() => {
+    state.rush.timeLeft -= 0.1;
+    updateRushTimer();
+    if (state.rush.timeLeft <= 0) endRush();
+  }, 100);
+  $("guessInput").focus();
+}
+
+function updateRushTimer() {
+  const r = state.rush;
+  if (!r) return;
+  $("cTimer").textContent = "⏱ " + Math.max(0, r.timeLeft).toFixed(1) + "s · " +
+    r.found + " trouvé" + (r.found > 1 ? "s" : "") + (r.combo > 1 ? " · 🔥 combo x" + r.combo : "");
+}
+
+function nextRushTrack() {
+  const r = state.rush;
+  stopAudio();
+  if (r.idx >= r.pool.length) r.idx = 0; // pool épuisé (improbable) : on reboucle
+  const track = r.pool[r.idx++];
+  state.track = track;
+  state.audio = new Audio(track.previewUrl);
+  state.audio.preload = "auto";
+  state.audio.play().catch(() => {});
+  state.audio.onended = () => { if (state.rushMode && !state.over) { state.audio.currentTime = 0; state.audio.play().catch(() => {}); } };
+  // Pré-chauffe du suivant pour un enchaînement instantané
+  if (r.pool[r.idx]) { const pre = new Audio(r.pool[r.idx].previewUrl); pre.preload = "auto"; }
+}
+
+function rushEvaluate(gTitle, label) {
+  const r = state.rush;
+  if (!r || !state.track) return;
+  if (fuzzyEq(gTitle, state.track.trackName)) {
+    r.found++;
+    r.combo++;
+    r.maxCombo = Math.max(r.maxCombo, r.combo);
+    addAttempt("✅ " + state.track.trackName + " — " + state.track.artistName, true);
+    updateRushTimer();
+    nextRushTrack();
+  } else {
+    addAttempt(label, false);
+  }
+}
+
+function endRush() {
+  const r = state.rush;
+  if (r && r.interval) { clearInterval(r.interval); r.interval = null; }
+  state.over = true;
+  stopAudio();
+  const rs = state.stats.rush;
+  rs.played++;
+  rs.won += r.found;
+  rs.points += r.found;
+  state.score += r.found;
+  state.played++;
+  $("score").textContent = (Math.round(state.score * 10) / 10).toString();
+  $("played").textContent = state.played;
+
+  $("verdict").textContent = "⚡ Rush terminé !";
+  $("verdict").className = "verdict win";
+  $("artwork").style.display = "none";
+  $("btnFull").style.display = "none";
+  $("revealTitle").textContent = r.found + " son" + (r.found > 1 ? "s" : "") + " trouvé" + (r.found > 1 ? "s" : "") + " · +" + r.found + " pts";
+  $("revealArtist").textContent = "Combo max : x" + r.maxCombo;
+  $("guessZone").style.display = "none";
+  $("reveal").classList.add("active");
+  $("cTimer").textContent = "⏱ 0.0s";
+}
+
+// ---------- Tableau de score latéral (indépendant du jeu) ----------
+const boardTeams = []; // { name, score } — en mémoire, remis à zéro au rechargement
+
+function renderBoard() {
+  const box = $("boardRows");
+  box.innerHTML = "";
+  if (!boardTeams.length) {
+    box.innerHTML = '<div style="color:var(--txt-dim);font-size:.82rem;text-align:center;padding:12px 0">Ajoute des équipes ou des joueurs pour commencer à compter.</div>';
+    return;
+  }
+  const top = Math.max(...boardTeams.map(t => t.score));
+  boardTeams.forEach((t, i) => {
+    const row = document.createElement("div");
+    row.className = "brow" + (t.score === top && t.score > 0 ? " lead" : "");
+    row.innerHTML = `
+      <div class="btop">
+        <span class="bname">${t.score === top && t.score > 0 ? "👑 " : ""}${esc(t.name)}</span>
+        <span class="bscore">${Math.round(t.score * 10) / 10}</span>
+        <button class="bdel" title="Supprimer">✕</button>
+      </div>
+      <div class="bbtns">
+        <button class="minus" data-d="-1">−1</button>
+        <button class="minus" data-d="-0.5">−0.5</button>
+        <button data-d="0.5">+0.5</button>
+        <button data-d="1">+1</button>
+        <button data-d="2">+2</button>
+      </div>`;
+    row.querySelector(".bdel").onclick = () => { boardTeams.splice(i, 1); renderBoard(); };
+    row.querySelectorAll("[data-d]").forEach(b => {
+      b.onclick = () => { t.score = Math.round((t.score + parseFloat(b.dataset.d)) * 10) / 10; renderBoard(); };
+    });
+    box.appendChild(row);
+  });
+}
+
+function addBoardTeam() {
+  const name = $("boardInput").value.trim();
+  if (!name || boardTeams.length >= 12) return;
+  if (!boardTeams.some(t => normalize(t.name) === normalize(name))) {
+    boardTeams.push({ name, score: 0 });
+  }
+  $("boardInput").value = "";
+  renderBoard();
+  $("boardInput").focus();
+}
+
+$("boardToggle").onclick = () => { $("board").classList.add("open"); renderBoard(); };
+$("boardClose").onclick = () => $("board").classList.remove("open");
+$("boardAdd").onclick = addBoardTeam;
+$("boardInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addBoardTeam(); } });
+$("boardReset").onclick = () => { boardTeams.forEach(t => t.score = 0); renderBoard(); };
+document.addEventListener("click", e => {
+  const board = $("board");
+  if (board.classList.contains("open") &&
+      !e.target.closest("#board") && !e.target.closest("#boardToggle")) {
+    board.classList.remove("open");
+  }
+});
+
+// ---------- Buzzer de soirée (Firebase Realtime Database) ----------
+let fbDb = null, bzRoomRef = null, bzBuzzRef = null, bzIsHost = false, bzMyName = "";
+
+function loadFirebase() {
+  return new Promise((resolve, reject) => {
+    if (!FIREBASE_CONFIG) { reject(new Error("noconfig")); return; }
+    if (fbDb) { resolve(); return; }
+    const s1 = document.createElement("script");
+    s1.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js";
+    s1.onload = () => {
+      const s2 = document.createElement("script");
+      s2.src = "https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js";
+      s2.onload = () => {
+        try {
+          firebase.initializeApp(FIREBASE_CONFIG);
+          fbDb = firebase.database();
+          resolve();
+        } catch (e) { reject(e); }
+      };
+      s2.onerror = () => reject(new Error("cdn"));
+      document.head.appendChild(s2);
+    };
+    s1.onerror = () => reject(new Error("cdn"));
+    document.head.appendChild(s1);
+  });
+}
+
+function bzBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "square"; o.frequency.value = 880;
+    g.gain.setValueAtTime(.25, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .35);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + .36);
+  } catch (e) {}
+}
+
+function bzShowError(msg) {
+  $("bzError").textContent = msg;
+  $("bzError").classList.add("active");
+}
+
+function openBuzzer() {
+  $("home").classList.add("hidden");
+  $("bgame").classList.add("active");
+  $("bzError").classList.remove("active");
+  $("bzChoice").style.display = "block";
+  $("bzHost").style.display = "none";
+  $("bzJoin").style.display = "none";
+  $("bzSetup").style.display = FIREBASE_CONFIG ? "none" : "block";
+}
+
+function bzCleanup() {
+  if (bzBuzzRef) { bzBuzzRef.off(); bzBuzzRef = null; }
+  if (bzRoomRef) {
+    if (bzIsHost) bzRoomRef.remove().catch(() => {});
+    bzRoomRef = null;
+  }
+  bzIsHost = false;
+}
+
+$("buzzLink").onclick = openBuzzer;
+$("bzBack").onclick = () => {
+  bzCleanup();
+  $("bgame").classList.remove("active");
+  $("home").classList.remove("hidden");
+};
+
+// --- Hôte ---
+$("bzHostBtn").onclick = async () => {
+  $("bzError").classList.remove("active");
+  try { await loadFirebase(); }
+  catch (e) { bzShowError(e.message === "noconfig" ? "Config Firebase manquante — suis les 5 étapes ci-dessus." : "Impossible de charger Firebase (réseau ?)"); return; }
+  bzIsHost = true;
+  const code = Array.from({ length: 4 }, () => "ABCDEFGHJKMNPQRSTUVWXYZ"[Math.floor(Math.random() * 23)]).join("");
+  bzRoomRef = fbDb.ref("rooms/" + code);
+  await bzRoomRef.set({ created: firebase.database.ServerValue.TIMESTAMP, buzz: null });
+  bzRoomRef.onDisconnect().remove();
+  $("bzCode").textContent = code.split("").join(" ");
+  $("bzChoice").style.display = "none";
+  $("bzHost").style.display = "block";
+
+  bzBuzzRef = bzRoomRef.child("buzz");
+  bzBuzzRef.on("value", snap => {
+    const b = snap.val();
+    const st = $("bzStatus");
+    if (b && b.name) {
+      st.textContent = "🔔 " + b.name + " !";
+      st.classList.add("hit");
+      bzBeep();
+      if (state.audio) state.audio.pause(); // coupe la musique en cours, tous modes
+    } else {
+      st.textContent = "🟢 Armé — lance ta musique !";
+      st.classList.remove("hit");
+    }
+  });
+  bzRoomRef.child("players").on("value", snap => {
+    const n = snap.numChildren();
+    $("bzPlayers").textContent = n + " buzzer" + (n > 1 ? "s" : "") + " connecté" + (n > 1 ? "s" : "");
+  });
+};
+$("bzReset").onclick = () => { if (bzRoomRef) bzRoomRef.child("buzz").set(null); };
+
+// --- Joueur ---
+$("bzJoinBtn").onclick = () => {
+  $("bzError").classList.remove("active");
+  if (!FIREBASE_CONFIG) { bzShowError("L'hôte doit d'abord configurer Firebase (voir instructions)."); return; }
+  $("bzChoice").style.display = "none";
+  $("bzJoin").style.display = "block";
+  $("bzCodeInput").focus();
+};
+$("bzEnter").onclick = async () => {
+  $("bzError").classList.remove("active");
+  const code = $("bzCodeInput").value.trim().toUpperCase();
+  bzMyName = $("bzNameInput").value.trim();
+  if (code.length !== 4 || !bzMyName) { bzShowError("Il faut le code à 4 lettres ET un nom d'équipe."); return; }
+  try { await loadFirebase(); }
+  catch (e) { bzShowError("Impossible de charger Firebase (réseau ?)"); return; }
+  const roomSnap = await fbDb.ref("rooms/" + code + "/created").get();
+  if (!roomSnap.exists()) { bzShowError("Salle introuvable — vérifie le code avec l'hôte."); return; }
+  bzRoomRef = fbDb.ref("rooms/" + code);
+  const me = bzRoomRef.child("players").push();
+  me.set({ name: bzMyName });
+  me.onDisconnect().remove();
+
+  $("bzEnter").style.display = "none";
+  $("bzCodeInput").disabled = true;
+  $("bzNameInput").disabled = true;
+  $("bzPlayerZone").style.display = "block";
+
+  bzBuzzRef = bzRoomRef.child("buzz");
+  bzBuzzRef.on("value", snap => {
+    const b = snap.val();
+    const btn = $("bzBuzz"), st = $("bzPlayerStatus");
+    if (b && b.name) {
+      btn.disabled = true;
+      if (b.name === bzMyName) { st.textContent = "🎉 C'EST TOI ! Réponds à voix haute !"; bzBeep(); }
+      else { st.textContent = "Trop tard — " + b.name + " a buzzé."; }
+    } else {
+      btn.disabled = false;
+      st.textContent = "Prêt·e — écoute l'enceinte…";
+    }
+  });
+};
+$("bzBuzz").onclick = () => {
+  if (!bzBuzzRef) return;
+  // Transaction : le PREMIER écrit gagne, tous les autres sont rejetés par le serveur
+  bzBuzzRef.transaction(cur => {
+    if (cur === null) return { name: bzMyName, t: firebase.database.ServerValue.TIMESTAMP };
+    return; // déjà pris → abandon
+  });
+};
+
+renderHome();
+</script>
+</body>
+</html>
