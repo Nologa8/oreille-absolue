@@ -192,7 +192,7 @@
     text-align: center; padding: 24px 18px; margin: 18px 0;
     font-family: var(--font-display); font-weight: 700; font-size: 1.3rem;
   }
-  .bz-status.hit { border-color: var(--neon); background: rgba(255,61,127,.1); color: var(--neon); font-size: 1.8rem; }
+  .bz-status.hit { border-color: var(--neon); background: rgba(255,61,127,.1); color: var(--neon); font-size: 2.4rem; }
   .bz-btn {
     width: 100%; aspect-ratio: 1; max-width: 300px; margin: 20px auto; display: block;
     border-radius: 50%; border: 6px solid var(--neon);
@@ -883,7 +883,7 @@ const FIREBASE_CONFIG = {
   measurementId: "G-33DRK58ZZS"
 };
 /* =====================================================
-   OREILLE ABSOLUE — v22
+   OREILLE ABSOLUE — v23
    - Deux onglets : 🎧 Blind test / 🎤 N'oubliez pas les paroles
    - Onglet Paroles : grille de catégories dédiée (config présélectionnée)
    - Scoring dégressif, versus, perso, périodes, niveaux, stats
@@ -2192,8 +2192,12 @@ function evaluateGuess(gTitle, gArtist, label, fromSug) {
     state.artistFound = true;
     $("hintArtist").textContent = "🟡 Bon artiste (" + state.track.artistName + ") — trouve le titre !";
     addAttempt(label + " → bon artiste, mauvais titre", true);
+    // Buzz actif : l'artiste seul rapporte la moitié du barème du moment
+    buzzSettle(buzzPartialPts(), "artiste trouvé, le titre reste à prendre 🎯");
   } else {
     addAttempt(label, false);
+    // Buzz actif : mauvaise réponse = pénalité, la manche repart pour les autres
+    buzzSettle(-0.5, "mauvaise réponse — ça repart !");
   }
   if (!state.classicMode) advanceStage(); // classique : essais illimités, c'est le chrono qui punit
 }
@@ -2251,13 +2255,8 @@ function endRound(won) {
     updateTurnBanner();
   }
 
-  // Buzzer : bonne réponse validée par l'arbitre avec un buzz actif
-  // → crédit automatique du buzzeur au tableau + réarmement de la salle
-  if (won && bzHitName && bzIsHost && bzRoomRef) {
-    boardCredit(bzHitName, pts);
-    bzFlashCredit(bzHitName, pts);
-    bzRoomRef.child("buzz").set(null);
-  }
+  // Buzzer : bonne réponse (titre) validée par l'arbitre avec un buzz actif
+  if (won) buzzSettle(pts, "titre validé, tableau à jour 🏆");
 
   $("score").textContent = (Math.round(state.score * 10) / 10).toString();
   $("streak").textContent = state.streak;
@@ -2550,15 +2549,12 @@ function rushEvaluate(gTitle, label) {
     r.combo++;
     r.maxCombo = Math.max(r.maxCombo, r.combo);
     addAttempt("✅ " + state.track.trackName + " — " + state.track.artistName, true);
-    if (bzHitName && bzIsHost && bzRoomRef) {
-      boardCredit(bzHitName, 1);
-      bzFlashCredit(bzHitName, 1);
-      bzRoomRef.child("buzz").set(null);
-    }
+    buzzSettle(1, "titre validé 🏆");
     updateRushTimer();
     nextRushTrack();
   } else {
     addAttempt(label, false);
+    buzzSettle(-0.5, "mauvaise réponse — ça repart !");
   }
 }
 
@@ -2632,7 +2628,9 @@ function renderBoard() {
     return;
   }
   const top = Math.max(...boardTeams.map(t => t.score));
-  boardTeams.forEach((t, i) => {
+  // Classement : le plus gros score en premier
+  const sorted = [...boardTeams].sort((a, b) => b.score - a.score);
+  sorted.forEach(t => {
     const cHex = (BOARD_COLORS[t.color] || BOARD_COLORS.none).hex;
     const row = document.createElement("div");
     row.className = "brow" + (t.score === top && t.score > 0 ? " lead" : "");
@@ -2651,7 +2649,11 @@ function renderBoard() {
         <button data-d="2">+2</button>
       </div>
       <div class="bdots"><span class="lbl">Équipe :</span></div>`;
-    row.querySelector(".bdel").onclick = () => { boardTeams.splice(i, 1); renderBoard(); };
+    row.querySelector(".bdel").onclick = () => {
+      const idx = boardTeams.indexOf(t);
+      if (idx > -1) boardTeams.splice(idx, 1);
+      renderBoard();
+    };
     row.querySelectorAll("[data-d]").forEach(b => {
       b.onclick = () => { t.score = Math.round((t.score + parseFloat(b.dataset.d)) * 10) / 10; renderBoard(); };
     });
@@ -2807,15 +2809,38 @@ function updateBzBar() {
   if (!(bzIsHost && bzRoomRef)) { bar.style.display = "none"; return; }
   bar.style.display = "block";
   if (bzHitName) {
-    bar.innerHTML = '🔔 <b style="color:var(--neon);font-size:1.15em">' + esc(bzHitName) +
-      '</b> — musique en pause, réponse à l\'oral ! ' +
-      '<button class="btn-main" id="bzBarReset" style="padding:7px 14px;font-size:.82rem;margin-left:10px">🔄 Réarmer & reprendre</button>';
+    bar.innerHTML = '🔔 <b style="color:var(--neon);font-size:1.6em;display:inline-block;margin:2px 0">' + esc(bzHitName) +
+      '</b><br>musique en pause — réponse à l\'oral, tape-la pour vérifier ' +
+      '<button class="btn-main" id="bzBarReset" style="padding:7px 14px;font-size:.82rem;margin-left:10px">🔄 Réarmer</button>';
     const btn = $("bzBarReset");
     if (btn) btn.onclick = () => { if (bzRoomRef) bzRoomRef.child("buzz").set(null); };
   } else {
     bar.innerHTML = '🔔 Salle <b style="color:var(--gold)">' + esc(bzRoomCode) + '</b> · ' +
       bzPlayersN + ' buzzer' + (bzPlayersN > 1 ? 's' : '') + ' · 🟢 armé';
   }
+}
+
+// Demi-points "artiste seul" au buzz : indexés sur l'avancement du jeu, moitié du plein tarif
+function buzzPartialPts() {
+  let full;
+  if (state.classicMode && state.cStart) full = classicPoints(state.cElapsed);
+  else if (state.rushMode) full = 1;
+  else full = WIN_POINTS[Math.min(state.stage, STAGES.length - 1)];
+  return Math.max(0.5, Math.round(full * 0.5 * 2) / 2);
+}
+
+// Applique un delta au buzzeur + confirmation + réarmement
+function buzzSettle(delta, reason) {
+  if (!(bzHitName && bzIsHost && bzRoomRef)) return false;
+  boardCredit(bzHitName, delta);
+  const bar = $("bzBar");
+  if (bar.style.display !== "none") {
+    bar.innerHTML = (delta >= 0 ? '✅ <b style="color:var(--cyan)">+' : '❌ <b style="color:var(--neon)">−') +
+      Math.abs(delta) + ' pt' + (Math.abs(delta) > 1 ? 's' : '') + '</b> pour <b>' + esc(bzHitName) + '</b> — ' + reason;
+    setTimeout(updateBzBar, 2600);
+  }
+  bzRoomRef.child("buzz").set(null); // réarme : la musique et le chrono reprennent
+  return true;
 }
 
 // Coupe musique + chronos quand quelqu'un buzze ; reprend au réarmement
@@ -2881,6 +2906,14 @@ $("bzHostBtn").onclick = async () => {
   bzRoomRef.child("players").on("value", snap => {
     bzPlayersN = snap.numChildren();
     $("bzPlayers").textContent = bzPlayersN + " buzzer" + (bzPlayersN > 1 ? "s" : "") + " connecté" + (bzPlayersN > 1 ? "s" : "");
+    // Inscription auto : chaque buzzer connecté a sa ligne au tableau (score conservé)
+    snap.forEach(child => {
+      const p = child.val();
+      if (p && p.name && !boardTeams.some(t => normalize(t.name) === normalize(p.name))) {
+        if (boardTeams.length < 20) boardTeams.push({ name: p.name, score: 0, color: "none" });
+      }
+    });
+    renderBoard();
     updateBuzzLink();
     updateBzBar();
   });
